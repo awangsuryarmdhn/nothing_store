@@ -1,0 +1,166 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if category %}{{ category.name }}{% else %}Semua Koleksi{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-screen-xl mx-auto px-4 md:px-6 lg:px-0 py-10 md:py-16">
+
+    <!-- PAGE TITLE -->
+    <h1 class="text-center mb-10 text-4xl md:text-6xl font-display font-bold">
+        {% if category %}{{ category.name }}{% else %}Semua Koleksi{% endif %}
+    </h1>
+
+
+    <!-- ===================== SEARCH BAR ===================== -->
+    <form method="get" class="mb-10">
+        <div class="relative w-full">
+
+            <!-- INPUT penuh area klik -->
+            <input
+                type="text"
+                name="search"
+                class="peer block w-full rounded-full border border-base-300 bg-base-100 px-5 py-4
+                    text-sm md:text-base focus:outline-none focus:border-blue-500
+                    focus:ring-2 focus:ring-blue-300 shadow-sm hover:shadow focus:shadow-lg transition
+                    z-20 relative"
+                placeholder=" "
+            />
+
+            <!-- LABEL tidak blok input -->
+            <label
+                class="absolute left-5 top-1/2 -translate-y-1/2 text-base-content/40 transition-all pointer-events-none
+                    peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base
+                    peer-focus:top-2 peer-focus:text-xs peer-focus:text-blue-600 z-10">
+                Cari produk…
+            </label>
+
+            {% if category %}
+            <input type="hidden" name="category" value="{{ category.slug }}">
+            {% endif %}
+
+            {% if sort %}
+            <input type="hidden" name="sort" value="{{ sort }}">
+            {% endif %}
+
+            <!-- BUTTON kecil, agar input luas -->
+            <button
+                type="submit"
+                class="absolute right-2 top-1/2 -translate-y-1/2 btn btn-primary rounded-full px-4 text-xs md:text-sm
+                    z-30">
+                Cari
+            </button>
+
+        </div>
+    </form>
+
+
+
+
+   <!-- ===================== CATEGORY FILTER ===================== -->
+    <div class="flex flex-wrap gap-3 w-full border-b pb-5 mb-6">
+
+        <!-- ALL -->
+        <a href="{% url 'store:product_list' %}"
+        class="px-4 py-2 rounded-full border text-sm
+        {% if not category %}bg-primary text-white{% endif %}">
+        Semua
+        </a>
+
+        {% for c in categories %}
+            <a href="?search={{ search }}&category={{ c.slug }}&sort={{ sort }}"
+            class="px-4 py-2 rounded-full border text-sm
+            {% if category and category.slug == c.slug %}
+                bg-primary text-white
+            {% endif %}">
+            {{ c.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+
+
+
+
+    
+    <div class="flex flex-wrap gap-3 w-full mb-10">
+
+        <a href="?search={{ search }}{% if category %}&category={{ category.slug }}{% endif %}&sort=price_asc"
+        class="px-4 py-2 rounded-full border text-sm
+        {% if sort == 'price_asc' %}bg-green-600 text-white{% endif %}">
+        ↑ Termurah
+        </a>
+
+        <a href="?search={{ search }}{% if category %}&category={{ category.slug }}{% endif %}&sort=price_desc"
+        class="px-4 py-2 rounded-full border text-sm
+        {% if sort == 'price_desc' %}bg-red-600 text-white{% endif %}">
+        ↓ Termahal
+        </a>
+
+        <a href="?search={{ search }}{% if category %}&category={{ category.slug }}{% endif %}&sort=newest"
+        class="px-4 py-2 rounded-full border text-sm
+        {% if sort == 'newest' %}bg-blue-600 text-white{% endif %}">
+        Terbaru
+        </a>
+
+        <a href="?search={{ search }}{% if category %}&category={{ category.slug }}{% endif %}&sort=oldest"
+        class="px-4 py-2 rounded-full border text-sm
+        {% if sort == 'oldest' %}bg-yellow-600 text-white{% endif %}">
+        Teralama
+        </a>
+
+    </div>
+
+
+
+
+    <!-- ===================== PRODUCT GRID ===================== -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+
+        {% for product in products %}
+        <a href="{{ product.get_absolute_url }}"
+           class="block bg-base-100 rounded-2xl overflow-hidden shadow hover:shadow-lg group">
+
+            <!-- IMAGE -->
+            <figure class="relative h-56 sm:h-64 md:h-72 lg:h-80 overflow-hidden">
+
+                {% with image=product.main_image %}
+                    {% if image %}
+                        <img src="{{ image.image.url }}"
+                             class="object-cover w-full h-full transition duration-500 group-hover:scale-105"
+                             alt="{{ product.name }}">
+                    {% else %}
+                        <div class="flex items-center justify-center w-full h-full bg-base-200">
+                            <i data-lucide="image-off" class="w-10 h-10 opacity-30"></i>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+            </figure>
+
+            <!-- CONTENT -->
+            <div class="p-3 text-center">
+                <h2 class="font-semibold text-xs sm:text-sm md:text-base truncate">
+                    {{ product.name }}
+                </h2>
+                <p class="font-bold mt-1 text-sm sm:text-base">
+                    Rp {{ product.price|floatformat:0 }}
+                </p>
+            </div>
+
+        </a>
+        {% empty %}
+        <p class="col-span-full text-center py-10 text-base-content/60">
+            Produk tidak ditemukan
+        </p>
+        {% endfor %}
+
+    </div>
+
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "store/base.html" %}
+
+{% block title %}Terima Kasih{% endblock %}
+
+{% block content %}
+    <div class="text-center py-12">
+        <h1 class="text-4xl font-bold uppercase">Terima Kasih</h1>
+        {% if order %}
+        <p class="text-xl text-base-content/70 mt-4">
+            Pesanan Anda dengan nomor #{{ order.id }} telah berhasil dibuat.
+        </p>
+        <p class="mt-2">Kami telah mengirimkan email konfirmasi pesanan ke alamat Anda.</p>
+        {% else %}
+        <p class="text-xl text-base-content/70 mt-4">
+            Terima kasih telah berbelanja.
+        </p>
+        {% endif %}
+        <a href="{% url 'store:product_list' %}" class="btn btn-neutral mt-8">Kembali Berbelanja</a>
+    </div>
+{% endblock %}

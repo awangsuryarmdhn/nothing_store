@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id" data-theme="lofi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}nothing_brain{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Archivo Black', sans-serif; text-transform: uppercase; }
+        .btn-primary { background-color: #000000; border-color: #000000; color: #ffffff; border-radius: 9999px; }
+        .btn-primary:hover { background-color: #333333; border-color: #333333; }
+        .text-primary { color: #000000; }
+        .badge-primary { background-color: #000000; border-color: #000000; color: #ffffff; }
+        .link-hover:hover { color: #000000; }
+        .card { border-radius: 1.5rem; }
+    </style>
+</head>
+
+<body class="bg-base-100">
+
+<header class="bg-base-100 shadow-md border-b border-base-200 z-50">
+
+    <div class="drawer max-w-screen-xl mx-auto">
+        <!-- DRAWER CONTROLLER (ONLY MOBILE) -->
+        <input id="nb_drawer" type="checkbox" class="drawer-toggle" />
+
+        <!-- NAVBAR CONTENT -->
+        <div class="drawer-content flex items-center justify-between px-4 h-20">
+
+            <!-- LOGO -->
+            <a href="{% url 'store:landing_page' %}" class="btn btn-ghost text-2xl font-display">
+                NB
+            </a>
+
+            <!-- DESKTOP NAV -->
+            <nav class="hidden lg:flex">
+                <ul class="menu menu-horizontal font-semibold text-sm">
+                    <li><a href="{% url 'store:landing_page' %}">Beranda</a></li>
+                    <li><a href="{% url 'store:product_list' %}">Koleksi</a></li>
+                    <li><a href="{% url 'store:about_us' %}">Tentang Kami</a></li>
+                </ul>
+            </nav>
+
+            <!-- DESKTOP ICONS -->
+            <div class="hidden lg:flex gap-4">
+
+                <!-- CART -->
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle">
+                        <div class="indicator">
+                            <i data-lucide="shopping-cart"></i>
+                            <span class="badge badge-primary badge-xs indicator-item">{{ cart|length }}</span>
+                        </div>
+                    </label>
+
+                    <div tabindex="0"
+                         class="mt-3 z-[1] card card-compact dropdown-content w-64 bg-base-100 text-base-content shadow-lg border border-base-300 rounded-2xl">
+                        <div class="card-body">
+                            <span class="font-bold text-lg">
+                                {{ cart|length }} Item di Keranjang
+                            </span>
+
+                            <div class="text-lg font-bold">
+                                Rp {{ cart.get_total_price|floatformat:0 }}
+                            </div>
+
+                            <div class="card-actions mt-2">
+                                <a href="{% url 'store:cart_detail' %}"
+                                   class="btn btn-primary btn-block">
+                                    Lihat Keranjang
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USER -->
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle">
+                        <i data-lucide="user"></i>
+                    </label>
+
+                    <ul tabindex="0"
+                        class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow-lg bg-base-100 rounded-box w-52 border border-base-300">
+
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'store:account_dashboard' %}">Akun Saya</a></li>
+                            <li>
+                                <form action="{% url 'store:logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit">Logout</button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li><a href="{% url 'store:login' %}">Login</a></li>
+                            <li><a href="{% url 'store:register' %}">Daftar</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- MOBILE DRAWER BUTTON -->
+            <label for="nb_drawer" class="btn btn-ghost btn-circle lg:hidden">
+                <i data-lucide="menu"></i>
+            </label>
+
+        </div>
+
+
+        <!-- DRAWER SIDE → HIDDEN on desktop -->
+        <div class="drawer-side z-50 lg:hidden">
+            <label for="nb_drawer" class="drawer-overlay"></label>
+
+            <ul class="menu p-6 w-80 min-h-full bg-base-100 space-y-4 text-lg font-semibold">
+
+                <!-- MOBILE LOGO -->
+                <li>
+                    <a href="{% url 'store:landing_page' %}"
+                       class="text-3xl font-display pb-4 border-b">
+                        NB_
+                    </a>
+                </li>
+
+                <!-- NAV MOBILE -->
+                <li><a href="{% url 'store:landing_page' %}">Beranda</a></li>
+                <li><a href="{% url 'store:product_list' %}">Koleksi</a></li>
+                <li><a href="{% url 'store:about_us' %}">Tentang Kami</a></li>
+
+                <hr>
+
+                <!-- USER MOBILE -->
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'store:account_dashboard' %}">Akun Saya</a></li>
+                    <li>
+                        <form action="{% url 'store:logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">Logout</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a href="{% url 'store:login' %}">Login</a></li>
+                    <li><a href="{% url 'store:register' %}">Daftar</a></li>
+                {% endif %}
+
+                <hr>
+
+                <!-- MOBILE CART -->
+                <div>
+                    <a href="{% url 'store:cart_detail' %}"
+                       class="btn btn-primary w-full rounded-full">
+                        Keranjang ({{ cart|length }})
+                    </a>
+                </div>
+
+            </ul>
+        </div>
+
+    </div>
+</header>
+
+
+
+<!-- CONTENT -->
+<main class="px-4 md:px-8 lg:px-0 max-w-screen-xl mx-auto py-6">
+    {% block content %}
+    {% endblock %}
+</main>
+
+
+<!-- FOOTER RESPONSIVE -->
+<footer class="footer p-10 bg-base-200 text-base-content flex flex-col lg:flex-row gap-10">
+    <aside>
+        <a href="{% url 'store:landing_page' %}" class="text-4xl font-display">NB_</a>
+        <p>NOTHING_BRAIN Industries Ltd.<br>Mendefinisikan ulang gaya sejak 2025.</p>
+    </aside>
+
+    <nav>
+        <h6 class="footer-title">Toko</h6>
+        <a href="{% url 'store:product_list' %}" class="link link-hover">Koleksi</a>
+        <a class="link link-hover">Bestseller</a>
+    </nav>
+
+    <nav>
+        <h6 class="footer-title">Perusahaan</h6>
+        <a class="link link-hover">Tentang Kami</a>
+        <a class="link link-hover">Kontak</a>
+    </nav>
+
+    <nav>
+        <h6 class="footer-title">Sosial Media</h6>
+        <div class="grid grid-flow-col gap-4">
+            <a><i data-lucide="twitter"></i></a>
+            <a><i data-lucide="youtube"></i></a>
+            <a><i data-lucide="facebook"></i></a>
+        </div>
+    </nav>
+</footer>
+
+
+<!-- TOAST -->
+<div class="toast toast-bottom toast-end z-50">
+    <div id="realtime-notification" class="alert alert-info bg-neutral text-neutral-content hidden rounded-2xl">
+        <span id="notification-text">Pesan notifikasi.</span>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+
+<script>
+    lucide.createIcons();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "store/base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="card bg-base-200 card-bordered p-8">
+        <h1 class="text-3xl font-bold mb-6 text-center font-mono">LOGIN</h1>
+        
+        {% if form.errors %}
+            <div class="alert alert-error shadow-lg mb-4">
+                <div>
+                    <i data-lucide="alert-circle"></i>
+                    <span>Username atau password Anda salah. Silakan coba lagi.</span>
+                </div>
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'store:login' %}" class="space-y-4">
+            {% csrf_token %}
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Username</span>
+                </label>
+                <input type="text" name="username" class="input input-bordered w-full" required>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Password</span>
+                </label>
+                <input type="password" name="password" class="input input-bordered w-full" required>
+            </div>
+            <div class="form-control mt-6">
+                <button type="submit" class="btn btn-neutral">Login</button>
+            </div>
+        </form>
+        <div class="divider">Belum punya akun?</div>
+        <a href="{% url 'store:register' %}" class="btn btn-outline">Daftar Sekarang</a>
+    </div>
+</div>
+{% endblock %}

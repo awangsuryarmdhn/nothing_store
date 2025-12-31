@@ -1,0 +1,99 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Dasbor Akun{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-12">
+    <div class="text-center pb-12">
+        <h1 class="text-6xl font-display">Akun Saya</h1>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Menu Navigasi Samping -->
+        <aside class="w-full lg:w-1/4">
+            <div class="card bg-base-200 p-4 sticky top-24">
+                <div class="p-4 text-center border-b border-base-300">
+                    <div class="avatar online mb-2">
+                        <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                            <!-- DIPERBARUI: Menggunakan sintaks template yang benar -->
+                            {% if user.profile and user.profile.image %}
+                                <img src="{{ user.profile.image.url }}" />
+                            {% else %}
+                                <img src="https://i.pravatar.cc/150?u={{ user.username }}" />
+                            {% endif %}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-lg">{{ user.first_name }} {{ user.last_name }}</h3>
+                    <p class="text-sm text-base-content/60">{{ user.username }}</p>
+                </div>
+                <ul class="menu p-2">
+                    <li class="menu-title"><span>Menu Akun</span></li>
+                    <li class="active"><a><i data-lucide="history" class="w-4 h-4 mr-2"></i> Riwayat Pesanan</a></li>
+                    <li><a href="{% url 'store:address_list' %}"><i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> Alamat Tersimpan</a></li>
+                    <li><a href="{% url 'store:account_details' %}"><i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> Detail Akun</a></li>
+                    <li>
+                        <form action="{% url 'store:logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left flex items-center">
+                                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+        
+        <!-- Konten Utama Dasbor -->
+        <main class="w-full lg:w-3/4">
+            <div class="card bg-base-200 p-6">
+                <h2 class="text-3xl font-display mb-6">Riwayat Pesanan Anda</h2>
+                {% if orders %}
+                <div class="overflow-x-auto">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nomor Pesanan</th>
+                                <th>Tanggal</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td class="font-bold">#{{ order.id }}</td>
+                                <td>{{ order.created|date:"d M Y" }}</td>
+                                <td>Rp {{ order.get_total_cost|floatformat:0 }}</td>
+                                <td>
+                                    {% if order.status == 'paid' %}
+                                        <span class="badge badge-success font-semibold">Lunas</span>
+                                    {% elif order.status == 'failed' %}
+                                        <span class="badge badge-error font-semibold">Gagal</span>
+                                    {% else %}
+                                        <span class="badge badge-warning font-semibold">Tertunda</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <a href="{% url 'store:retry_payment' order.id %}" class="btn btn-primary btn-xs">Bayar Sekarang</a>
+                                    {% elif order.status == 'paid' %}
+                                        <a href="{% url 'store:order_detail' order.id %}" class="btn btn-ghost btn-xs">Lihat Detail</a>
+                                    {% else %}
+                                        <span class="text-xs text-base-content/60">Tidak tersedia</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Anda belum memiliki riwayat pesanan.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

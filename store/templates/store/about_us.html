@@ -1,0 +1,45 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Tentang Kami{% endblock %}
+
+{% block content %}
+<div class="bg-base-200">
+    <div class="container mx-auto px-4 py-24 text-center">
+        <h1 class="text-6xl font-display">{{ content.title|default:"TENTANG NOTHING_BRAIN" }}</h1>
+        <p class="text-xl text-base-content/70 mt-4 max-w-2xl mx-auto">{{ content.subtitle|default:"Kami bukan sekadar merek. Kami adalah sebuah ide." }}</p>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-20">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+            <h2 class="text-4xl font-display mb-4">{{ content.philosophy_title|default:"FILOSOFI KAMI" }}</h2>
+            <div class="prose max-w-none text-base-content/80 space-y-4">
+                {{ content.philosophy_text|linebreaks|default:"Teks filosofi akan muncul di sini." }}
+            </div>
+        </div>
+        <div class="rounded-2xl overflow-hidden">
+            {% if content.philosophy_image %}
+                <img src="{{ content.philosophy_image.url }}" alt="Filosofi Merek" class="w-full h-full object-cover">
+            {% else %}
+                <div class="w-full h-96 bg-base-200 flex items-center justify-center rounded-2xl">
+                    <i data-lucide="image-off" class="w-16 h-16 text-base-content/30"></i>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="bg-neutral text-neutral-content py-20">
+    <div class="container mx-auto px-4 text-center">
+        <h2 class="text-5xl font-display">{{ content.community_title|default:"BERGABUNG DENGAN KAMI" }}</h2>
+        <p class="text-lg text-neutral-content/70 mt-4 max-w-3xl mx-auto">
+            {{ content.community_text|default:"Teks komunitas akan muncul di sini." }}
+        </p>
+        <div class="mt-8">
+            <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-wide">Lihat Koleksi</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

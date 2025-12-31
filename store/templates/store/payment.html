@@ -1,0 +1,40 @@
+{% extends "store/base.html" %}
+
+{% block title %}Pembayaran{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-24 text-center">
+    <h1 class="text-4xl font-display mb-4">Selesaikan Pembayaran Anda</h1>
+    <p class="text-base-content/70 mb-8">Anda akan diarahkan ke halaman pembayaran Midtrans.</p>
+    <button id="pay-button" class="btn btn-primary btn-lg">Bayar Sekarang</button>
+</div>
+
+<script src="https://app.midtrans.com/snap/snap.js" data-client-key="{{ client_key }}"></script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const payButton = document.getElementById('pay-button');
+        payButton.addEventListener('click', function () {
+            window.snap.pay('{{ snap_token }}', {
+                onSuccess: function(result){
+                    console.log('success', result);
+                    window.location.href = "{% url 'store:order_confirmation' %}";
+                },
+                onPending: function(result){
+                    console.log('pending', result);
+                    window.location.href = "{% url 'store:order_confirmation' %}";
+                },
+                onError: function(result){
+                    console.log('error', result);
+                    alert("Pembayaran gagal!");
+                },
+                onClose: function(){
+                    alert('Anda menutup popup tanpa menyelesaikan pembayaran');
+                }
+            });
+        });
+
+        // Otomatis klik tombol bayar saat halaman dimuat
+        payButton.click();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}
+    {{ product.name }}
+{% endblock %}
+
+{% block content %}
+
+<div class="container mx-auto px-4 pt-10">
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10" data-product-id="{{ product.id }}">
+
+        <!-- GALERI GAMBAR -->
+        <div class="lg:sticky lg:top-24 h-fit w-full">
+
+            <div class="carousel rounded-2xl bg-base-200 w-full relative overflow-hidden">
+
+                {% for image in product.images.all %}
+                    <div id="slide{{ forloop.counter }}" class="carousel-item relative w-full">
+                        <img src="{{ image.image.url }}" class="h-[420px] md:h-[560px] w-full object-contain" />
+
+                        <!-- Tombol navigasi -->
+                        <div class="absolute flex justify-between transform -translate-y-1/2 left-5 right-5 top-1/2">
+                            <a href="#slide{% if forloop.first %}{{ product.images.all|length }}{% else %}{{ forloop.counter|add:'-1' }}{% endif %}"
+                               class="btn btn-circle btn-ghost bg-black/30 text-white">❮</a>
+
+                            <a href="#slide{% if forloop.last %}1{% else %}{{ forloop.counter|add:'1' }}{% endif %}"
+                               class="btn btn-circle btn-ghost bg-black/30 text-white">❯</a>
+                        </div>
+
+                    </div>
+                {% empty %}
+                    <div class="h-96 flex items-center justify-center">
+                        <i data-lucide="image-off" class="w-24 h-24 text-base-content/30"></i>
+                    </div>
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        <!-- DETAIL PRODUK -->
+        <div>
+
+            <p class="text-sm uppercase tracking-widest font-semibold text-primary">{{ product.category.name }}</p>
+
+            <h1 class="text-4xl md:text-6xl font-display mt-2 mb-4 leading-tight">
+                {{ product.name }}
+            </h1>
+
+            <p class="text-3xl font-bold mb-6">
+                Rp {{ product.price|floatformat:0 }}
+            </p>
+
+            <form id="add-to-cart-form" action="{% url 'store:cart_add' product.id %}" method="post">
+
+                {% csrf_token %}
+
+                <input type="hidden" name="variant_id" id="selected-variant-id">
+
+                <!-- PILIH WARNA -->
+                <div class="mb-6">
+                    <h3 class="font-bold mb-2">Warna:</h3>
+                    <div id="color-selector" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- PILIH UKURAN -->
+                <div class="mb-6">
+                    <h3 class="font-bold mb-2">Ukuran:</h3>
+                    <div id="size-selector" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- INPUT JUMLAH -->
+                <div class="flex items-center gap-4 mb-6">
+                    <label class="font-bold">Jumlah:</label>
+                    <input type="number" id="id_quantity" name="quantity" min="1" value="1"
+                           class="input input-bordered w-20 text-center" disabled>
+                </div>
+
+                <!-- STOK -->
+                <p class="stock-display text-sm mb-6 text-base-content/60">
+                    Pilih warna dan ukuran untuk melihat stok.
+                </p>
+
+                <!-- BUTTON -->
+                <button type="submit"
+                        id="add-to-cart-button"
+                        class="btn btn-primary btn-block btn-lg"
+                        disabled>
+                    Pilih Varian
+                </button>
+
+            </form>
+
+            <!-- DESKRIPSI -->
+            <div class="collapse collapse-plus bg-base-200 rounded-2xl mt-10">
+                <input type="checkbox" />
+                <div class="collapse-title text-xl font-bold">
+                    Deskripsi Produk
+                </div>
+                <div class="collapse-content">
+                    <p class="prose text-base-content/70">
+                        {{ product.description|linebreaks }}
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =============================================================== -->
+<!-- SCRIPT SLIDESHOW OTOMATIS -->
+<!-- =============================================================== -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    const total = {{ product.images.all|length }};
+    if (total <= 1) return;
+
+    let current = 1;
+    const delay = 3500;  // 3.5 detik
+
+    function nextSlide() {
+        current++;
+        if (current > total) current = 1;
+        window.location.hash = "#slide" + current;
+    }
+
+    let timer = setInterval(nextSlide, delay);
+
+    // pause ketika mouse hover
+    document.querySelector(".carousel").addEventListener("mouseenter", function() {
+        clearInterval(timer);
+    });
+
+    document.querySelector(".carousel").addEventListener("mouseleave", function() {
+        timer = setInterval(nextSlide, delay);
+    });
+
+});
+</script>
+
+
+<!-- =============================================================== -->
+<!-- SCRIPT VARIAN PRODUK (TIDAK DIUBAH) -->
+<!-- =============================================================== -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const variantsData = JSON.parse(`{{ variants_data_json|escapejs }}`);
+
+    const colorSelector = document.getElementById('color-selector');
+    const sizeSelector = document.getElementById('size-selector');
+    const stockDisplay  = document.querySelector('.stock-display');
+    const addButton     = document.getElementById('add-to-cart-button');
+    const variantInput  = document.getElementById('selected-variant-id');
+    const qtyInput      = document.getElementById('id_quantity');
+
+    let selectedColor = null;
+    let selectedSize  = null;
+    let maxStock      = 0;
+
+    Object.keys(variantsData).forEach(color => {
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.dataset.color = color;
+        btn.textContent = color;
+        btn.className = "btn btn-sm btn-outline";
+
+        colorSelector.appendChild(btn);
+    });
+
+    colorSelector.addEventListener("click", e => {
+
+        const btn = e.target.closest("button");
+        if (!btn) return;
+
+        selectedColor = btn.dataset.color;
+        selectedSize  = null;
+
+        [...colorSelector.children].forEach(b =>
+            b.classList.remove("ring", "ring-primary", "ring-offset-base-100", "ring-offset-2")
+        );
+
+        btn.classList.add("ring", "ring-primary", "ring-offset-base-100", "ring-offset-2");
+
+        updateUI();
+    });
+
+    sizeSelector.addEventListener("click", e => {
+
+        const btn = e.target.closest("button");
+        if (!btn) return;
+        if (btn.classList.contains("btn-disabled")) return;
+
+        selectedSize = btn.dataset.size;
+        updateUI();
+    });
+
+    function updateUI() {
+
+        sizeSelector.innerHTML = "";
+
+        addButton.disabled = true;
+        qtyInput.disabled  = true;
+        qtyInput.value     = 1;
+        variantInput.value = "";
+
+        if (selectedColor && variantsData[selectedColor]) {
+
+            variantsData[selectedColor].forEach(v => {
+
+                const disabled = v.stock === 0 ? "btn-disabled" : "";
+
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.dataset.size = v.size;
+                btn.textContent  = v.size;
+
+                btn.className =
+                    `btn btn-sm ${selectedSize === v.size ? "btn-primary" : "btn-outline"} ${disabled}`;
+
+                sizeSelector.appendChild(btn);
+            });
+        }
+
+        if (selectedColor && selectedSize) {
+
+            const variant = variantsData[selectedColor].find(
+                x => x.size === selectedSize
+            );
+
+            if (!variant) return;
+
+            if (variant.stock > 0) {
+                stockDisplay.textContent = `Stok tersedia: ${variant.stock}`;
+                maxStock = variant.stock;
+                addButton.disabled = false;
+                qtyInput.disabled  = false;
+                variantInput.value = variant.id;
+
+            } else {
+                stockDisplay.textContent = "Stok habis";
+            }
+
+        } else {
+            stockDisplay.textContent =
+                "Pilih warna dan ukuran untuk melihat stok.";
+        }
+
+    }
+
+    qtyInput.addEventListener("input", () => {
+        if (qtyInput.value > maxStock) qtyInput.value = maxStock;
+        if (qtyInput.value < 1) qtyInput.value = 1;
+    });
+
+});
+</script>
+
+{% endblock %}

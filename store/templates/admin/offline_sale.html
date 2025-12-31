@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+
+<h1>Penjualan Offline</h1>
+
+<form method="post" style="max-width:600px">
+    {% csrf_token %}
+
+    <div>
+        <label>Varian Produk</label><br>
+        <select name="variant_id" required>
+            {% for v in variants %}
+            <option value="{{ v.id }}">
+                {{ v.product.name }} - {{ v.color }} {{ v.size }}
+                (Stok: {{ v.stock }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Jumlah</label><br>
+        <input type="number" name="quantity" min="1" required>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Harga (opsional)</label><br>
+        <input type="number" name="price">
+    </div>
+
+    <br>
+
+    <div>
+        <label>Channel</label><br>
+        <select name="channel">
+            <option value="offline">Offline</option>
+            <option value="wa">WhatsApp</option>
+            <option value="ig">Instagram</option>
+            <option value="mp">Marketplace</option>
+        </select>
+    </div>
+
+    <br>
+
+    <div>
+        <label>Catatan</label><br>
+        <textarea name="note"></textarea>
+    </div>
+
+    <br>
+
+    <button type="submit" class="default">Simpan</button>
+</form>
+
+<hr>
+
+<h2>Riwayat Terakhir</h2>
+
+<table>
+    <tr>
+        <th>Waktu</th>
+        <th>Produk</th>
+        <th>Qty</th>
+        <th>Channel</th>
+        <th>Admin</th>
+    </tr>
+
+    {% for s in recent_sales %}
+    <tr>
+        <td>{{ s.created_at|date:"d M Y H:i" }}</td>
+        <td>{{ s.variant.product.name }}</td>
+        <td>{{ s.quantity }}</td>
+        <td>{{ s.channel }}</td>
+        <td>{{ s.staff }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

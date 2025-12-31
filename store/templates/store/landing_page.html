@@ -1,0 +1,212 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}
+Nothing Brain - Streetwear & Culture
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="relative w-full overflow-hidden rounded-b-[3rem] rounded-t-[3rem] shadow-xl">
+
+    <div class="hero min-h-screen w-full flex items-center justify-center"
+        style="background-image:url({% if content.hero_image %}{{ content.hero_image.url }}{% else %}https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070&auto=format&fit=crop{% endif %});
+        background-size:cover; background-position:center;">
+
+        <div class="absolute inset-0 bg-black/40"></div>
+
+        <div class="hero-content flex flex-col items-center text-center relative z-10 px-6 max-w-3xl">
+
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-display text-white leading-tight drop-shadow-md mb-6">
+                {{ content.hero_title|default:"MINDLESS HARDWARE" }}
+            </h1>
+
+            <p class="text-sm md:text-base text-white/80 tracking-wide mb-8 max-w-xl">
+                {{ content.hero_subtitle|default:"Your Pride Has Never Been Stolen." }}
+            </p>
+
+            <a href="{% url 'store:product_list' %}"
+               class="btn btn-primary btn-wide rounded-full text-sm md:text-base shadow-lg">
+                SHOP THE DROP
+            </a>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- MAIN CONTENT WRAPPER -->
+<div class="max-w-screen-xl mx-auto px-4 md:px-6 lg:px-0 py-16 md:py-20">
+
+<!-- FEATURED COLLECTION -->
+<section class="mb-20">
+
+    <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-5xl font-display">Koleksi Pilihan</h2>
+        <p class="text-base-content/60 mt-2 text-sm md:text-base">
+            Pilihan terbaik dari musim ini.
+        </p>
+    </div>
+
+    {% if main_collection %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- MAIN COLLECTION LEFT -->
+        <a href="{% url 'store:product_list_by_category' main_collection.link.slug %}"
+           class="relative rounded-2xl h-80 md:h-full overflow-hidden group">
+
+            <img src="{{ main_collection.image.url }}"
+                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+
+            <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8
+                        bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+
+                <h2 class="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-wide
+                           text-white drop-shadow-md">
+                    {{ main_collection.title }}
+                </h2>
+
+            </div>
+
+        </a>
+
+        <!-- SIDE COLLECTIONS RIGHT -->
+        {% if side_collections %}
+        <div class="grid gap-6">
+
+            {% for collection in side_collections %}
+            <a href="{% url 'store:product_list_by_category' collection.link.slug %}"
+               class="relative rounded-2xl h-48 md:h-[16rem] overflow-hidden group">
+
+                <img src="{{ collection.image.url }}"
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+
+                <div class="absolute bottom-0 left-0 right-0 p-4
+                            bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+
+                    <h2 class="text-2xl md:text-3xl font-display font-bold uppercase tracking-wide
+                               text-white drop-shadow-md">
+                        {{ collection.title }}
+                    </h2>
+
+                </div>
+
+            </a>
+            {% endfor %}
+
+        </div>
+        {% endif %}
+        
+    </div>
+
+    {% else %}
+    <p class="text-center text-base-content/60">Tidak ada koleksi pilihan.</p>
+    {% endif %}
+
+</section>
+
+
+<!-- NEW PRODUCTS PREMIUM -->
+<section class="mb-20">
+
+    <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-5xl font-display">Pendatang Baru</h2>
+        <p class="text-base-content/60 mt-2 text-sm md:text-base">
+            Gaya terbaru langsung dari studio kami.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+
+        {% for product in featured_products %}
+        <a href="{{ product.get_absolute_url }}"
+           class="relative group rounded-2xl overflow-hidden bg-base-200 shadow-sm">
+
+            {% with image=product.main_image %}
+                {% if image %}
+                <img src="{{ image.image.url }}"
+                     class="h-60 sm:h-72 md:h-96 w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                {% else %}
+                <div class="h-60 sm:h-72 md:h-96 flex items-center justify-center">
+                    <i data-lucide="image-off" class="w-10 h-10 opacity-20"></i>
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
+
+            <div class="absolute bottom-4 left-4 right-4 text-white">
+                <h2 class="font-display font-bold text-lg md:text-2xl tracking-wide leading-tight drop-shadow-lg">
+                    {{ product.name }}
+                </h2>
+                <p class="text-base md:text-lg font-semibold drop-shadow-lg">
+                    Rp {{ product.price|floatformat:0 }}
+                </p>
+            </div>
+
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
+                <span class="btn btn-primary rounded-full px-6 text-sm md:text-base shadow-lg">
+                    Lihat Detail
+                </span>
+            </div>
+
+        </a>
+        {% empty %}
+        <p class="col-span-full text-center text-base-content/60">
+            Belum ada produk.
+        </p>
+        {% endfor %}
+
+    </div>
+
+    <div class="text-center mt-12">
+        <a href="{% url 'store:product_list' %}"
+           class="btn btn-outline btn-wide rounded-full">
+            Lihat Semua Koleksi
+        </a>
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- LOOKBOOK -->
+<section class="bg-base-200 py-16 md:py-20">
+    <div class="max-w-screen-xl mx-auto px-4 md:px-6 lg:px-0">
+
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-display">#NOTHINGBRAIN</h2>
+            <p class="text-base-content/60 mt-2 text-sm md:text-base">
+                Bagaimana caramu mengekspresikan gaya?
+            </p>
+        </div>
+
+        <!-- GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
+            {% for item in lookbook_images %}
+                <div class="w-full overflow-hidden">
+                    <img 
+                        src="{{ item.image.url }}"
+                        class="
+                            w-full h-full object-cover
+                            aspect-[4/5]        <!-- mobile: vertikal -->
+                            sm:aspect-square    <!-- tablet ke atas -->
+                        "
+                        loading="lazy"
+                        alt="NothingBrain Lookbook"
+                    />
+                </div>
+            {% empty %}
+                <p class="col-span-full text-center text-base-content/60">
+                    Belum ada gambar lookbook.
+                </p>
+            {% endfor %}
+        </div>
+
+    </div>
+</section>
+
+
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "store/base.html" %}
+
+{% block title %}Daftar Akun Baru{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="card bg-base-200 card-bordered p-8">
+        <h1 class="text-3xl font-bold mb-6 text-center font-mono">DAFTAR</h1>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">{{ field.label_tag }}</span>
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="label">
+                            <span class="label-text-alt">{{ field.help_text|safe }}</span>
+                        </div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="label">
+                            <span class="label-text-alt text-error">{{ error }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <div class="form-control mt-6">
+                <button type="submit" class="btn btn-neutral">Buat Akun</button>
+            </div>
+        </form>
+        <div class="divider">Sudah punya akun?</div>
+        <a href="{% url 'store:login' %}" class="btn btn-outline">Login</a>
+    </div>
+</div>
+{% endblock %}

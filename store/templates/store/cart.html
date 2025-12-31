@@ -1,0 +1,110 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}
+    Keranjang Belanja
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 pt-16">
+    <div class="text-center pb-12">
+        <h1 class="text-6xl font-display">Keranjang Anda</h1>
+    </div>
+
+    {% if cart %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 card bg-base-200 p-6">
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th class="text-center">Jumlah</th>
+                            <th class="text-right">Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart %}
+                            {% with product=item.product variant=item.variant %}
+                                <tr>
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            <div class="avatar">
+                                                <!-- DIPERBARUI: Mengubah rounded-lg menjadi rounded-full -->
+                                                <div class="w-16 h-16 rounded-full">
+                                                    <a href="{{ product.get_absolute_url }}">
+                                                        {% with image=product.main_image %}
+                                                            {% if image %}
+                                                                <img src="{{ image.image.url }}" alt="{{ product.name }}" />
+                                                            {% else %}
+                                                                <div class="w-16 h-16 bg-base-300 flex items-center justify-center rounded-full">
+                                                                    <i data-lucide="image-off" class="w-8 h-8 text-base-content/30"></i>
+                                                                </div>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold">{{ product.name }}</div>
+                                                <div class="text-sm opacity-50">{{ variant.color }} / {{ variant.size }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <form action="{% url 'store:cart_add' product.id %}" method="post" class="join">
+                                            {% csrf_token %}
+                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ variant.stock }}" class="input input-bordered w-24 text-center join-item">
+                                            <input type="hidden" name="override" value="True">
+                                            <input type="hidden" name="variant_id" value="{{ variant.id }}">
+                                            <button type="submit" class="btn btn-ghost btn-xs join-item">Perbarui</button>
+                                        </form>
+                                    </td>
+                                    <td class="text-right font-semibold">Rp {{ item.total_price|floatformat:0 }}</td>
+                                    <th class="text-right">
+                                        <form action="{% url 'store:cart_remove' product.id variant.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-ghost btn-xs"><i data-lucide="trash-2"></i></button>
+                                        </form>
+                                    </th>
+                                </tr>
+                            {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="lg:col-span-1">
+            <div class="card bg-base-200 p-6 sticky top-24">
+                <h2 class="text-3xl font-display mb-4">Ringkasan</h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>Rp {{ cart.get_total_price|floatformat:0 }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-base-content/60">
+                        <span>Pengiriman</span>
+                        <span>Dihitung di checkout</span>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span>Rp {{ cart.get_total_price|floatformat:0 }}</span>
+                </div>
+                <div class="mt-6">
+                    <a href="{% url 'store:order_create' %}" class="btn btn-primary btn-block">Lanjut ke Checkout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-24 flex flex-col items-center">
+        <i data-lucide="shopping-bag" class="w-24 h-24 text-base-content/20 mb-6"></i>
+        <p class="text-2xl font-bold text-base-content/70">Keranjang belanja Anda kosong.</p>
+        <a href="{% url 'store:product_list' %}" class="btn btn-outline mt-8">Mulai Belanja</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block after_field_sets %}
+{{ block.super }}
+
+<fieldset class="module aligned">
+    <h2>Pembuat Varian Otomatis</h2>
+    <div class="form-row">
+        <div>
+            <label for="colors-input">Warna (pisahkan dengan koma):</label>
+            <input type="text" id="colors-input" class="vTextField">
+            <p class="help">Contoh: Hitam, Putih, Navy</p>
+        </div>
+    </div>
+    <div class="form-row">
+        <div>
+            <label>Ukuran:</label>
+            <div id="sizes-input" style="display: flex; gap: 15px; padding-top: 5px;">
+                <label><input type="checkbox" value="S"> S</label>
+                <label><input type="checkbox" value="M"> M</label>
+                <label><input type="checkbox" value="L"> L</label>
+                <label><input type="checkbox" value="XL"> XL</label>
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <button type="button" id="generate-variants-btn" class="button">Buat Varian</button>
+    </div>
+</fieldset>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.body.classList.contains('change-form')) return;
+
+    const generateBtn = document.getElementById('generate-variants-btn');
+    if (!generateBtn) return;
+
+    generateBtn.addEventListener('click', function() {
+        const colorsInput = document.getElementById('colors-input').value;
+        const colors = colorsInput.split(',').map(c => c.trim()).filter(c => c);
+        
+        const sizesCheckboxes = document.querySelectorAll('#sizes-input input[type="checkbox"]:checked');
+        const sizes = Array.from(sizesCheckboxes).map(cb => cb.value);
+
+        if (colors.length === 0 || sizes.length === 0) {
+            alert('Silakan masukkan setidaknya satu warna dan pilih satu ukuran.');
+            return;
+        }
+
+        const addRowLink = document.querySelector('#variants-group .add-row a');
+        if (!addRowLink) {
+            console.error('Tombol "Add another Product Variant" tidak ditemukan.');
+            return;
+        }
+
+        const formsetPrefix = 'variants';
+        const totalFormsInput = document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`);
+
+        colors.forEach(color => {
+            sizes.forEach(size => {
+                addRowLink.click();
+                let newIndex = parseInt(totalFormsInput.value) - 1;
+                
+                const colorField = document.getElementById(`id_${formsetPrefix}-${newIndex}-color`);
+                const sizeField = document.getElementById(`id_${formsetPrefix}-${newIndex}-size`);
+                
+                if (colorField) colorField.value = color;
+                if (sizeField) sizeField.value = size;
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}

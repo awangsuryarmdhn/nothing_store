@@ -1,0 +1,100 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Alamat Tersimpan{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-12">
+    <div class="text-center pb-12">
+        <h1 class="text-6xl font-display">Akun Saya</h1>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Menu Navigasi Samping -->
+        <aside class="w-full lg:w-1/4">
+            <div class="card bg-base-200 p-4 sticky top-24">
+                <div class="p-4 text-center border-b border-base-300">
+                    <div class="avatar online mb-2">
+                        <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                            {% if user.profile and user.profile.image %}
+                                <img src="{{ user.profile.image.url }}" />
+                            {% else %}
+                                <img src="https://i.pravatar.cc/150?u={{ user.username }}" />
+                            {% endif %}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-lg">{{ user.first_name }} {{ user.last_name }}</h3>
+                    <p class="text-sm text-base-content/60">{{ user.username }}</p>
+                </div>
+                <ul class="menu p-2">
+                    <li class="menu-title"><span>Menu Akun</span></li>
+                    <li><a href="{% url 'store:account_dashboard' %}"><i data-lucide="history" class="w-4 h-4 mr-2"></i> Riwayat Pesanan</a></li>
+                    <li class="active"><a><i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> Alamat Tersimpan</a></li>
+                    <li><a href="{% url 'store:account_details' %}"><i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> Detail Akun</a></li>
+                    <li>
+                        <form action="{% url 'store:logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left flex items-center">
+                                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Konten Utama Dasbor -->
+        <main class="w-full lg:w-3/4">
+            <div class="card bg-base-200 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-display">Alamat Tersimpan</h2>
+                    <!-- DIPERBARUI: Menambahkan onclick untuk membuka modal -->
+                    <button class="btn btn-primary btn-sm" onclick="add_address_modal.showModal()">Tambah Alamat Baru</button>
+                </div>
+                {% if addresses %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for address in addresses %}
+                        <div class="card bg-base-100 border border-base-300">
+                            <div class="card-body">
+                                {% if address.is_default %}
+                                <div class="badge badge-primary">Utama</div>
+                                {% endif %}
+                                <h3 class="card-title">{{ address.full_name }}</h3>
+                                <p>{{ address.phone_number }}</p>
+                                <p>{{ address.address_line }}</p>
+                                <p>{{ address.city }}, {{ address.postal_code }}</p>
+                                <div class="card-actions justify-end mt-4">
+                                    {% if not address.is_default %}
+                                    <a href="{% url 'store:address_set_default' address.id %}" class="btn btn-outline btn-xs">Jadikan Utama</a>
+                                    {% endif %}
+                                    <a href="{% url 'store:address_delete' address.id %}" class="btn btn-ghost btn-xs">Hapus</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Anda belum menambahkan alamat.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- BARU: Modal untuk Tambah Alamat -->
+<dialog id="add_address_modal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Tambah Alamat Baru</h3>
+    <form method="post" action="{% url 'store:address_add' %}" class="space-y-4 py-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="modal-action">
+          <button type="submit" class="btn btn-primary">Simpan</button>
+          <form method="dialog">
+            <button class="btn">Batal</button>
+          </form>
+        </div>
+    </form>
+  </div>
+</dialog>
+{% endblock %}
