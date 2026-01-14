@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('dashboard/', include('dashboard.urls')),
     # Arahkan semua URL root ke file urls.py milik aplikasi 'store'
     path('', include('store.urls')),
 ]

@@ -1,45 +1,145 @@
 {% extends "store/base.html" %}
 {% load static %}
 
-{% block title %}Tentang Kami{% endblock %}
+{% block meta_description %}
+Tentang Nothing Brain. Lebih dari sekadar pakaian, kami adalah manifestasi ide dan filosofi mindless hardware. Pelajari kisah dan visi kami di sini.
+{% endblock %}
+
+{% block title %}Tentang Kami | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="bg-base-200">
-    <div class="container mx-auto px-4 py-24 text-center">
-        <h1 class="text-6xl font-display">{{ content.title|default:"TENTANG NOTHING_BRAIN" }}</h1>
-        <p class="text-xl text-base-content/70 mt-4 max-w-2xl mx-auto">{{ content.subtitle|default:"Kami bukan sekadar merek. Kami adalah sebuah ide." }}</p>
-    </div>
-</div>
 
-<div class="container mx-auto px-4 py-20">
-    <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-            <h2 class="text-4xl font-display mb-4">{{ content.philosophy_title|default:"FILOSOFI KAMI" }}</h2>
-            <div class="prose max-w-none text-base-content/80 space-y-4">
-                {{ content.philosophy_text|linebreaks|default:"Teks filosofi akan muncul di sini." }}
+<style>
+    /* Animasi Reveal Halus */
+    .reveal-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(40px); }
+    .delay-100 { animation-delay: 0.2s; }
+    .delay-200 { animation-delay: 0.4s; }
+    
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="bg-white w-full overflow-hidden">
+
+    <header class="relative w-full bg-black text-white pt-20 pb-24 md:pt-32 md:pb-32 px-4 rounded-b-[3rem] shadow-2xl z-10">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-gray-800 rounded-full blur-[120px] opacity-30 translate-x-1/3 -translate-y-1/3"></div>
+        </div>
+
+        <div class="max-w-4xl mx-auto text-center relative z-10">
+            <span class="reveal-up inline-block text-xs font-bold uppercase tracking-[0.3em] text-gray-400 mb-6 border border-gray-700 px-4 py-1 rounded-full">
+                Est. 2015 &mdash; Indonesia
+            </span>
+            <h1 class="reveal-up delay-100 text-5xl md:text-8xl font-display font-bold uppercase tracking-tighter leading-[0.9] mb-8">
+                {{ content.title|default:"WE ARE<br>NOTHING BRAIN" }}
+            </h1>
+            <p class="reveal-up delay-200 text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
+                {{ content.subtitle|default:"Kami bukan sekadar merek pakaian. Kami adalah manifestasi dari ide liar yang tidak terikat aturan. Mindless Hardwear for the mindful soul." }}
+            </p>
+        </div>
+    </header>
+
+    <section class="max-w-screen-xl mx-auto px-4 md:px-8 py-20 md:py-32">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center">
+            
+            <div class="relative order-2 md:order-1 group">
+                <div class="relative aspect-[4/5] w-full bg-gray-100 overflow-hidden border border-black">
+                    {% if content.philosophy_image %}
+                        <img src="{{ content.philosophy_image.url }}" 
+                             alt="Filosofi Nothing Brain" 
+                             class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 grayscale group-hover:grayscale-0"
+                             loading="lazy">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400 font-display">NO IMAGE</div>
+                    {% endif %}
+                </div>
+                
+                <div class="absolute -bottom-6 -right-4 md:-right-10 bg-black text-white p-6 shadow-[8px_8px_0px_0px_rgba(200,200,200,1)] max-w-[200px] md:max-w-xs border border-black hidden md:block transform transition-transform group-hover:-translate-y-2">
+                    <p class="font-display text-2xl uppercase leading-none">"Create with no mind, wear with soul."</p>
+                </div>
+            </div>
+
+            <div class="order-1 md:order-2">
+                <h2 class="font-display text-4xl md:text-6xl font-bold uppercase tracking-tighter text-black mb-8">
+                    {{ content.philosophy_title|default:"THE PHILOSOPHY" }}
+                </h2>
+                
+                <article class="prose prose-lg text-gray-600 leading-relaxed space-y-6 font-light">
+                    {% if content.philosophy_text %}
+                        {{ content.philosophy_text|linebreaks }}
+                    {% else %}
+                        <p>
+                            Nothing Brain lahir dari keinginan untuk melepaskan diri dari kebisingan tren sesaat. Kami percaya pada kekuatan desain yang jujur, material yang tangguh, dan pesan yang autentik.
+                        </p>
+                        <p>
+                            Setiap jahitan adalah komitmen kami terhadap kualitas. Setiap grafis adalah cerita yang ingin kami sampaikan. Kami tidak mendikte gaya Anda, kami hanya menyediakan "hardware" untuk Anda mengekspresikan jati diri.
+                        </p>
+                    {% endif %}
+                </article>
+
+                <div class="mt-10 pt-10 border-t border-dashed border-gray-300 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                         <i data-lucide="map-pin" class="w-6 h-6 text-black"></i>
+                    </div>
+                    <div>
+                        <span class="block font-display text-sm uppercase tracking-widest text-black font-bold">The Creative Team</span>
+                        <span class="text-xs text-gray-500">Singkawang - Semarang, Indonesia</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="rounded-2xl overflow-hidden">
-            {% if content.philosophy_image %}
-                <img src="{{ content.philosophy_image.url }}" alt="Filosofi Merek" class="w-full h-full object-cover">
-            {% else %}
-                <div class="w-full h-96 bg-base-200 flex items-center justify-center rounded-2xl">
-                    <i data-lucide="image-off" class="w-16 h-16 text-base-content/30"></i>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+    </section>
 
-<div class="bg-neutral text-neutral-content py-20">
-    <div class="container mx-auto px-4 text-center">
-        <h2 class="text-5xl font-display">{{ content.community_title|default:"BERGABUNG DENGAN KAMI" }}</h2>
-        <p class="text-lg text-neutral-content/70 mt-4 max-w-3xl mx-auto">
-            {{ content.community_text|default:"Teks komunitas akan muncul di sini." }}
-        </p>
-        <div class="mt-8">
-            <a href="{% url 'store:product_list' %}" class="btn btn-primary btn-wide">Lihat Koleksi</a>
+    <section class="bg-gray-50 py-24 border-y border-gray-200">
+        <div class="max-w-screen-xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:divide-x divide-gray-200">
+                
+                <div class="p-6 text-center group">
+                    <div class="w-16 h-16 bg-white border border-gray-200 text-black rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="shield-check" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold uppercase mb-3 tracking-wide">Authentic Quality</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">Material heavyweight pilihan terbaik untuk kenyamanan dan durabilitas jangka panjang.</p>
+                </div>
+
+                <div class="p-6 text-center group">
+                    <div class="w-16 h-16 bg-white border border-gray-200 text-black rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="sparkles" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold uppercase mb-3 tracking-wide">Exclusive Design</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">Diproduksi dalam jumlah terbatas (Limited Drop). Tidak pasaran, eksklusif untuk Anda.</p>
+                </div>
+
+                <div class="p-6 text-center group">
+                    <div class="w-16 h-16 bg-white border border-gray-200 text-black rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="users" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="font-display text-xl font-bold uppercase mb-3 tracking-wide">Community Driven</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">Dibangun oleh dan untuk komunitas yang menghargai seni jalanan dan kultur subversif.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <div class="bg-black text-white py-32 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-20 pointer-events-none">
+             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-gray-700 rounded-full animate-[spin_10s_linear_infinite]"></div>
+             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-gray-600 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+        </div>
+
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <h2 class="text-5xl md:text-8xl font-display font-bold uppercase mb-6 tracking-tighter leading-none">
+                {{ content.community_title|default:"JOIN THE<br>MOVEMENT" }}
+            </h2>
+            <p class="text-lg text-gray-400 mt-6 max-w-xl mx-auto mb-12 font-light">
+                {{ content.community_text|default:"Jadilah bagian dari arsip kami. Kenakan produknya, bagikan ceritanya. Tag #NothingBrain di media sosial." }}
+            </p>
+            
+            <a href="{% url 'store:product_list' %}" class="btn btn-white text-black rounded-full px-10 h-14 font-bold uppercase tracking-[0.2em] hover:scale-105 transition-transform border-none">
+                Jelajahi Koleksi
+            </a>
         </div>
     </div>
+
 </div>
 {% endblock %}

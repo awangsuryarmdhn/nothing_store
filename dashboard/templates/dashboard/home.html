@@ -1,0 +1,228 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-white tracking-tight">Overview</h1>
+        <div class="text-sm text-gray-400">
+            {% now "l, d F Y" %}
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <div class="glass-panel p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-gray-400 font-medium">Total Pendapatan</span>
+                <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                    <i class="ri-money-dollar-circle-line text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-3xl font-bold text-white">Rp {{ total_revenue|intcomma }}</h3>
+            <p class="text-sm text-green-500 mt-2 flex items-center gap-1">
+                <i class="ri-arrow-up-line"></i> +12.5% <span class="text-gray-500 ml-1">bulan ini</span>
+            </p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="glass-panel p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-gray-400 font-medium">Total Pesanan</span>
+                <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <i class="ri-shopping-bag-3-line text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-3xl font-bold text-white">{{ total_orders }}</h3>
+            <p class="text-sm text-gray-500 mt-2">Semua channel (Online & POS)</p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="glass-panel p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-gray-400 font-medium">Produk Aktif</span>
+                <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                    <i class="ri-t-shirt-2-line text-xl"></i>
+                </div>
+            </div>
+            <h3 class="text-3xl font-bold text-white">{{ total_products }}</h3>
+            <p class="text-sm text-gray-500 mt-2">Siap dijual</p>
+        </div>
+    </div>
+
+    <!-- Analytics Chart -->
+    <div class="glass-panel p-6 rounded-2xl col-span-1 lg:col-span-3">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-white tracking-tight">Omzet Penjualan (Bulan Ini)</h3>
+            <span class="text-xs text-brand-accent bg-white/10 px-2 py-1 rounded">Grafik Harian</span>
+        </div>
+        <div class="h-80 w-full relative">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="glass-panel p-6 rounded-2xl col-span-1 lg:col-span-3">
+        <h3 class="text-lg font-bold text-white mb-6 tracking-tight">Pesanan Terbaru</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-gray-500 text-sm border-b border-brand-gray">
+                        <th class="pb-3 pl-2">Order ID</th>
+                        <th class="pb-3">Channel</th>
+                        <th class="pb-3">Pelanggan</th>
+                        <th class="pb-3">Status</th>
+                        <th class="pb-3 text-right">Total</th>
+                        <th class="pb-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-300">
+                    {% for order in latest_orders %}
+                    <tr class="border-b border-brand-gray/50 hover:bg-white/5 transition-colors">
+                        <td class="py-4 pl-2 font-mono text-sm">#{{ order.id }}</td>
+                        <td class="py-4 text-xs text-gray-400">
+                            {% if order.payment_type %}
+                                {{ order.payment_type|upper }}
+                            {% else %}
+                                WEBSITE
+                            {% endif %}
+                        </td>
+                        <td class="py-4">
+                            <div class="font-medium text-white">{{ order.first_name }} {{ order.last_name }}</div>
+                            <div class="text-xs text-gray-500">{{ order.email }}</div>
+                        </td>
+                        <td class="py-4">
+                            {% if order.status == 'paid' %}
+                                <span class="bg-green-500/10 text-green-400 px-2 py-1 rounded text-xs border border-green-500/20">Paid</span>
+                            {% elif order.status == 'pending' %}
+                                <span class="bg-yellow-500/10 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/20">Pending</span>
+                            {% else %}
+                                <span class="bg-red-500/10 text-red-400 px-2 py-1 rounded text-xs border border-red-500/20">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 text-right font-medium">Rp {{ order.get_total_cost|intcomma }}</td>
+                        <td class="py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'dashboard:order_invoice' order.id %}" target="_blank" title="Invoice" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors text-xs">
+                                    <i class="ri-printer-line"></i>
+                                </a>
+                                {% if order.status != 'paid' %}
+                                <a href="{% url 'dashboard:order_retry_payment' order.id %}" title="Pay Now" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition-colors text-xs">
+                                    <i class="ri-secure-payment-line"></i>
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'dashboard:order_detail' order.id %}" title="Detail" class="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-colors text-xs">
+                                    <i class="ri-eye-line"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-gray-500">Belum ada pesanan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/chart.min.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js Library NOT loaded!');
+            document.getElementById('salesChart').parentElement.innerHTML = '<div class="text-red-500 text-center p-10">Gagal memuat grafik (Library Missing)</div>';
+            return;
+        }
+
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Parse data from context
+        const labels = {{ sales_labels|safe }};
+        const data = {{ sales_data|safe }};
+        
+        console.log('Chart Data:', { labels, data });
+
+        if (!data || data.length === 0 || data.every(v => v === 0)) {
+            console.warn('Data grafik kosong atau nol semua.');
+        }
+
+        const salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Omzet',
+                    data: data,
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#000000',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
+                },
+                scales: {
+                    // Chart.js v2 syntax
+                    xAxes: [{
+                        gridLines: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            fontColor: '#666666',
+                            fontFamily: 'Outfit'
+                        }
+                    }],
+                    yAxes: [{
+                        gridLines: {
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            borderDash: [5, 5],
+                            drawBorder: false
+                        },
+                        ticks: {
+                            fontColor: '#666666',
+                            fontFamily: 'Outfit',
+                            beginAtZero: true,
+                            callback: function(value, index, values) {
+                                return 'Rp ' + value.toLocaleString('id-ID');
+                            }
+                        }
+                    }]
+                },
+                tooltips: {
+                    backgroundColor: '#000000',
+                    titleFontFamily: 'Outfit',
+                    bodyFontFamily: 'Outfit',
+                    titleFontColor: '#ffffff',
+                    bodyFontColor: '#cccccc',
+                    borderColor: '#333333',
+                    borderWidth: 1,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            return 'Rp ' + tooltipItem.yLabel.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

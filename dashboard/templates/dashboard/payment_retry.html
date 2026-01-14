@@ -1,0 +1,71 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Retry Payment #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10">
+    <div class="glass-panel p-8 rounded-2xl text-center">
+        <h2 class="text-2xl font-bold text-white mb-2">Proses Pembayaran</h2>
+        <p class="text-gray-400 mb-6">Order #{{ order.id }} - Rp {{ order.get_total_cost|intcomma }}</p>
+
+        {% if order.status == 'paid' %}
+            <div class="bg-green-500/20 text-green-400 p-4 rounded-xl mb-6">
+                Status: PAID (Lunas)
+            </div>
+            <a href="{% url 'dashboard:order_detail' order.id %}" class="btn-primary">Kembali</a>
+        {% else %}
+            <div id="payment-container" class="mb-6"></div>
+            
+            <button id="pay-button" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-full transition-all">
+                Bayar Sekarang (Snap)
+            </button>
+            
+            <p class="mt-4 text-xs text-gray-500">Klik tombol di atas untuk membuka popup pembayaran Midtrans.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ client_key }}"></script>
+<script>
+    {% if midtrans_is_production %}
+    const snapUrl = "https://app.midtrans.com/snap/snap.js";
+    {% else %}
+    const snapUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+    {% endif %}
+    
+    // Dynamically load snap if needed logic (already loaded above via script tag, but usually URL differs)
+    // IMPORTANT: Sandbox vs Production URL handled by script src above?
+    // Actually, script src above is hardcoded to Sandbox. Let's fix.
+</script>
+
+<!-- Correct dynamic script loading -->
+<script>
+    var script = document.createElement('script');
+    script.src = "{% if midtrans_is_production %}https://app.midtrans.com/snap/snap.js{% else %}https://app.sandbox.midtrans.com/snap/snap.js{% endif %}";
+    script.setAttribute('data-client-key', "{{ client_key }}");
+    document.head.appendChild(script);
+
+    document.getElementById('pay-button').onclick = function(){
+        window.snap.pay('{{ snap_token }}', {
+            onSuccess: function(result){
+                alert("Pembayaran Berhasil!");
+                window.location.reload();
+            },
+            onPending: function(result){
+                alert("Menunggu Pembayaran...");
+                window.location.reload();
+            },
+            onError: function(result){
+                alert("Pembayaran Gagal!");
+            },
+            onClose: function(){
+                alert('Popup ditutup tanpa menyelesaikan pembayaran');
+            }
+        });
+    };
+</script>
+{% endblock %}

@@ -1,38 +1,123 @@
 {% extends "store/base.html" %}
+{% load static %}
 
-{% block title %}Daftar Akun Baru{% endblock %}
+{% block title %}Register | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto">
-    <div class="card bg-base-200 card-bordered p-8">
-        <h1 class="text-3xl font-bold mb-6 text-center font-mono">DAFTAR</h1>
+
+<style>
+    /* 1. Styling Input dengan Border Tegas */
+    /* Mengubah border-transparent menjadi border-gray-300 agar terlihat garisnya */
+    .nb-input {
+        @apply w-full bg-white border border-gray-300 px-4 py-3 text-sm font-medium text-gray-900 placeholder-gray-400 focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 outline-none rounded-none;
+    }
+    
+    /* 2. Label Styling */
+    .nb-label {
+        @apply block text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500 mb-2 ml-1;
+    }
+
+    /* 3. Help Text (Syarat Password, dll) */
+    .help-text {
+        @apply text-[10px] text-gray-400 mt-1 ml-1 leading-relaxed;
+    }
+    .help-text ul { @apply list-none pl-0 mt-1; }
+    .help-text li { @apply inline-block mr-3 text-gray-500; }
+    .help-text li::before { content: "• "; @apply text-gray-300 mr-1; }
+
+    /* 4. Error Styling */
+    .error-list {
+        @apply text-xs text-red-600 mt-1 ml-1 font-medium flex flex-col gap-1;
+    }
+</style>
+
+<div class="min-h-screen flex items-center justify-center py-16 px-4 bg-gray-50 relative">
+    
+    <div class="absolute top-0 left-0 w-full h-1/2 bg-white -skew-y-2 transform origin-top-left -z-10 border-b border-gray-100"></div>
+
+    <div class="max-w-xl w-full bg-white p-8 md:p-12 border border-gray-200 shadow-xl relative">
         
-        <form method="post" class="space-y-4">
+        <div class="text-center mb-10 border-b border-black pb-6">
+            <h1 class="font-display text-4xl md:text-5xl font-bold uppercase tracking-tighter leading-none mb-2">
+                Join Us
+            </h1>
+            <p class="text-xs font-mono text-gray-400 uppercase tracking-widest">Create Your Account</p>
+        </div>
+
+        <form method="post" class="space-y-6">
             {% csrf_token %}
-            {% for field in form %}
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">{{ field.label_tag }}</span>
-                    </label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <div class="label">
-                            <span class="label-text-alt">{{ field.help_text|safe }}</span>
-                        </div>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <div class="label">
-                            <span class="label-text-alt text-error">{{ error }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-            <div class="form-control mt-6">
-                <button type="submit" class="btn btn-neutral">Buat Akun</button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+                
+                {% for field in form %}
+                    <div class="{% if field.name == 'first_name' or field.name == 'last_name' %}col-span-1{% else %}col-span-1 md:col-span-2{% endif %}">
+                        
+                        <label class="nb-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.errors %}
+                            <div class="error-list">
+                                {% for error in field.errors %}
+                                    <span class="flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> {{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text|safe }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
             </div>
+
+            <div class="pt-8 border-t border-dashed border-gray-200 mt-8">
+                <button type="submit" class="w-full bg-black text-white font-bold uppercase tracking-[0.2em] py-4 text-xs hover:bg-gray-800 transition-all shadow-lg hover:-translate-y-0.5">
+                    Create Account
+                </button>
+            </div>
+
+            <div class="text-center">
+                <p class="text-xs text-gray-500 font-medium">
+                    Already have an account? 
+                    <a href="{% url 'store:login' %}" class="text-black font-bold uppercase tracking-wider hover:underline ml-1">Log In</a>
+                </p>
+            </div>
+
         </form>
-        <div class="divider">Sudah punya akun?</div>
-        <a href="{% url 'store:login' %}" class="btn btn-outline">Login</a>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Script ini otomatis menambahkan styling ke input yang di-generate Django
+        const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="checkbox"])');
+        
+        inputs.forEach(input => {
+            // Tambahkan class styling kita
+            input.classList.add('nb-input');
+            
+            // Hapus class bawaan (jika ada sisa dari framework lain)
+            input.classList.remove('input', 'input-bordered'); 
+            
+            // Tambahkan placeholder otomatis jika kosong
+            if (!input.hasAttribute('placeholder')) {
+                // Cari label pasangannya untuk dijadikan teks placeholder
+                const fieldName = input.getAttribute('name');
+                // Format sederhana (misal: first_name -> First Name...)
+                const cleanName = fieldName.replace(/_/g, ' ').replace(/[0-9]/g, ''); 
+                // Kapitalisasi huruf pertama
+                const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                
+                input.setAttribute('placeholder', `Enter ${formattedName}...`);
+            }
+        });
+    });
+</script>
+
 {% endblock %}
+
+

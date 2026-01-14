@@ -1,41 +1,75 @@
 {% extends "store/base.html" %}
+{% load static %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="max-w-md mx-auto">
-    <div class="card bg-base-200 card-bordered p-8">
-        <h1 class="text-3xl font-bold mb-6 text-center font-mono">LOGIN</h1>
+
+<div class="min-h-[80vh] flex items-center justify-center py-16 px-4 bg-gray-50">
+    <div class="max-w-md w-full bg-white p-8 md:p-12 border border-gray-200 shadow-xl relative overflow-hidden">
         
+        <div class="absolute top-0 left-0 w-16 h-16 bg-gray-50 -translate-x-1/2 -translate-y-1/2 rotate-45"></div>
+        <div class="absolute bottom-0 right-0 w-16 h-16 bg-gray-50 translate-x-1/2 translate-y-1/2 rotate-45"></div>
+
+        <div class="text-center mb-10">
+            <h1 class="font-display text-4xl md:text-5xl font-bold uppercase tracking-tighter mb-2">Login</h1>
+            <p class="text-xs text-gray-400 uppercase tracking-[0.2em] font-medium">Welcome Back</p>
+        </div>
+
         {% if form.errors %}
-            <div class="alert alert-error shadow-lg mb-4">
-                <div>
-                    <i data-lucide="alert-circle"></i>
-                    <span>Username atau password Anda salah. Silakan coba lagi.</span>
+            <div class="bg-red-50 border border-red-100 p-4 mb-8 flex items-start gap-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 shrink-0 mt-0.5"></i>
+                <div class="text-xs text-red-600">
+                    <span class="font-bold uppercase tracking-wide block mb-1">Access Denied</span>
+                    Username atau password yang Anda masukkan salah.
                 </div>
             </div>
         {% endif %}
 
-        <form method="post" action="{% url 'store:login' %}" class="space-y-4">
+        <form method="post" action="{% url 'store:login' %}" class="space-y-6">
             {% csrf_token %}
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text">Username</span>
-                </label>
-                <input type="text" name="username" class="input input-bordered w-full" required>
+            
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Username</label>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="user" class="w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors"></i>
+                    </div>
+                    <input type="text" name="username" class="w-full bg-gray-50 border border-gray-200 px-4 py-3 pl-10 rounded-none focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all text-sm font-medium placeholder:text-gray-300" placeholder="Enter username" required autofocus>
+                </div>
             </div>
-            <div class="form-control">
-                <label class="label">
-                    <span class="label-text">Password</span>
-                </label>
-                <input type="password" name="password" class="input input-bordered w-full" required>
+
+            <div>
+                <div class="flex justify-between mb-2">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-gray-500">Password</label>
+                    </div>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="lock" class="w-4 h-4 text-gray-400 group-focus-within:text-black transition-colors"></i>
+                    </div>
+                    <input type="password" name="password" class="w-full bg-gray-50 border border-gray-200 px-4 py-3 pl-10 rounded-none focus:outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all text-sm font-medium placeholder:text-gray-300" placeholder="••••••••" required>
+                </div>
             </div>
-            <div class="form-control mt-6">
-                <button type="submit" class="btn btn-neutral">Login</button>
-            </div>
+
+            <button type="submit" class="w-full bg-black text-white font-bold uppercase tracking-[0.2em] py-4 text-xs hover:bg-gray-800 hover:shadow-lg transition-all transform hover:-translate-y-0.5 mt-2">
+                Sign In
+            </button>
         </form>
-        <div class="divider">Belum punya akun?</div>
-        <a href="{% url 'store:register' %}" class="btn btn-outline">Daftar Sekarang</a>
+
+        <div class="relative my-10">
+            <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                <div class="w-full border-t border-dashed border-gray-200"></div>
+            </div>
+            <div class="relative flex justify-center">
+                <span class="px-4 bg-white text-[10px] font-bold uppercase tracking-widest text-gray-400">New Member?</span>
+            </div>
+        </div>
+
+        <a href="{% url 'store:register' %}" class="block w-full border border-black text-black text-center font-bold uppercase tracking-[0.2em] py-3 text-xs hover:bg-black hover:text-white transition-all">
+            Create Account
+        </a>
+
     </div>
 </div>
+
 {% endblock %}

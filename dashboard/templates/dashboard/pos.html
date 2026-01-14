@@ -1,0 +1,611 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+
+{% block title %}POS - Kasir{% endblock %}
+
+{% block content %}
+<div class="h-[calc(100vh-6rem)] flex flex-col lg:flex-row gap-6" x-data="posApp()">
+    
+    <!-- Left: Product Grid -->
+    <div class="flex-1 flex flex-col gap-4 min-h-0">
+        <!-- Search Bar -->
+        <div class="glass-panel p-4 rounded-xl flex gap-4">
+            <div class="relative flex-1">
+                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <input type="text" x-model="search" @keydown.enter="handleSearchEnter()" placeholder="Cari produk / Scan Barcode..." 
+                       class="w-full bg-black/30 border border-brand-gray rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-brand-accent transition-colors">
+            </div>
+            <div class="flex gap-2">
+                <button class="px-4 py-2 rounded-lg border border-brand-gray text-xs font-medium transition-colors"
+                        :class="category === 'all' ? 'bg-white text-black font-bold' : 'text-gray-400 hover:bg-white/10'" @click="category = 'all'">
+                    ALL
+                </button>
+                <button class="px-4 py-2 rounded-lg border border-brand-gray text-xs font-medium transition-colors"
+                        :class="category === 't-shirts' ? 'bg-white text-black font-bold' : 'text-gray-400 hover:bg-white/10'" @click="category = 't-shirts'">
+                    KAOS
+                </button>
+                <button class="px-4 py-2 rounded-lg border border-brand-gray text-xs font-medium transition-colors"
+                        :class="category === 'hoodies' ? 'bg-white text-black font-bold' : 'text-gray-400 hover:bg-white/10'" @click="category = 'hoodies'">
+                    HOODIE
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="flex-1 overflow-y-auto pr-2">
+            <!-- Empty State -->
+            <!-- Empty State -->
+            <div x-show="!loading && filteredItems.length === 0" class="flex flex-col items-center justify-center h-64 text-gray-500">
+                <i class="ri-search-2-line text-4xl mb-2"></i>
+                <p>Produk tidak ditemukan</p>
+                <button @click="search = ''; category = 'all'" class="mt-2 text-brand-accent hover:underline text-sm">Reset Pencarian</button>
+            </div>
+            
+            <!-- Loading State -->
+            <div x-show="loading" class="flex flex-col items-center justify-center h-64 text-gray-500">
+                <i class="ri-loader-4-line text-4xl mb-2 animate-spin"></i>
+                <p>Memuat produk...</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 content-start" x-show="filteredItems.length > 0">
+                <template x-for="item in filteredItems" :key="item.id">
+                    <div @click="addToCart(item)" 
+                         class="glass-panel p-3 rounded-xl cursor-pointer hover:border-white/50 transition-all group relative overflow-hidden">
+                        
+                        <!-- Stock Badge -->
+                        <div class="absolute top-2 right-2 px-2 py-0.5 rounded text-xs font-bold z-10"
+                             :class="item.stock > 0 ? 'bg-black/50 text-white backdrop-blur' : 'bg-red-500 text-white'">
+                            <span x-text="item.stock > 0 ? 'Stok: ' + item.stock : 'Habis'"></span>
+                        </div>
+
+                        <!-- Image -->
+                        <div class="aspect-square bg-gray-800 rounded-lg mb-3 overflow-hidden">
+                            <img :src="item.image" x-show="item.image" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div x-show="!item.image" class="w-full h-full flex items-center justify-center text-gray-600">
+                                <i class="ri-image-line text-2xl"></i>
+                            </div>
+                        </div>
+
+                        <!-- Info -->
+                        <h4 class="font-medium text-white text-sm line-clamp-2" x-text="item.name"></h4>
+                        <p class="text-gray-400 text-sm mt-1" x-text="formatRupiah(item.price)"></p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Cart -->
+    <div class="w-full lg:w-[450px] glass-panel rounded-2xl flex flex-col h-full border-l border-brand-gray/50">
+        <div class="p-4 border-b border-brand-gray">
+            <h2 class="font-bold text-xl text-white flex items-center gap-2">
+                <i class="ri-shopping-cart-2-line"></i> Keranjang
+            </h2>
+        </div>
+
+        <!-- Cart Items (Table Style) -->
+        <div class="flex-1 overflow-y-auto p-2">
+            <table class="w-full text-left text-sm text-gray-400">
+                <thead class="text-xs uppercase bg-white/5 text-gray-300">
+                    <tr>
+                        <th class="px-2 py-2">Item</th>
+                        <th class="px-2 py-2 text-center">Qty</th>
+                        <th class="px-2 py-2 text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    <template x-for="(item, index) in cart" :key="index">
+                        <tr>
+                            <td class="px-2 py-3">
+                                <div class="font-medium text-white" x-text="item.name"></div>
+                                <div class="text-xs" x-text="formatRupiah(item.price)"></div>
+                            </td>
+                            <td class="px-2 py-3 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button @click="updateQty(index, -1)" class="w-5 h-5 rounded bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center">-</button>
+                                    <span class="w-4 font-bold text-white" x-text="item.qty"></span>
+                                    <button @click="updateQty(index, 1)" class="w-5 h-5 rounded bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center">+</button>
+                                </div>
+                            </td>
+                            <td class="px-2 py-3 text-right text-white font-medium">
+                                <span x-text="formatRupiah(item.price * item.qty)"></span>
+                                <button @click="removeFromCart(index)" class="block ml-auto mt-1 text-xs text-red-500 hover:text-red-400">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            
+            <div x-show="cart.length === 0" class="flex flex-col items-center justify-center h-48 text-gray-500 opacity-50">
+                <i class="ri-shopping-basket-line text-4xl mb-2"></i>
+                <p>Keranjang kosong</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 bg-brand-black/50 border-t border-brand-gray">
+            <!-- Email Input -->
+            <div class="mb-3">
+                <input type="email" x-model="customerEmail" placeholder="Email Pelanggan (Opsional)" 
+                       class="w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-brand-accent transition-colors">
+            </div>
+
+            <!-- Summary -->
+            <div class="space-y-2 mb-4 text-sm">
+                <div class="flex justify-between text-gray-400">
+                    <span>Total Barang</span>
+                    <span class="text-white font-bold" x-text="totalItems"></span>
+                </div>
+                <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg">
+                    <span class="text-gray-300 font-bold">Total Harga</span>
+                    <span class="text-2xl font-bold text-brand-accent" x-text="formatRupiah(total)"></span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button @click="checkout('cash')" :disabled="cart.length === 0" 
+                        class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="ri-money-dollar-bill-line"></i> Cash
+                </button>
+                <button @click="checkout('qr')" :disabled="cart.length === 0" 
+                        class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <i class="ri-qr-code-line"></i> QRIS
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- PAYMENT MODAL -->
+    <div x-show="showPaymentModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+         style="display: none;"
+         x-transition.opacity>
+        <div class="bg-[#1a1a1a] border border-gray-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button @click="showPaymentModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="ri-close-line text-2xl"></i>
+            </button>
+
+            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <i class="ri-wallet-3-line"></i> Pembayaran
+            </h3>
+
+            <!-- Details -->
+            <div class="space-y-4 mb-8">
+                <div class="flex justify-between text-gray-400">
+                    <span>Total Tagihan</span>
+                    <span class="text-white font-bold text-xl" x-text="formatRupiah(total)"></span>
+                </div>
+                
+                <!-- Cash Input -->
+                <div x-show="paymentMethod === 'cash'">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Uang Diterima (Cash)</label>
+                    <input type="number" x-model="cashReceived" @input="calculateChange()" 
+                           class="w-full bg-black/50 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-green-500 focus:outline-none"
+                           placeholder="0">
+                </div>
+
+                <div class="flex justify-between text-gray-400 border-t border-gray-700 pt-4" x-show="paymentMethod === 'cash'">
+                    <span>Kembalian</span>
+                    <span class="text-green-500 font-bold text-xl" x-text="formatRupiah(change)"></span>
+                </div>
+
+                <!-- QR Warning -->
+                <div x-show="paymentMethod === 'qr'" class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg text-blue-300 text-sm">
+                    <i class="ri-information-line mr-1"></i> Pastikan pembayaran QRIS sudah berhasil diverifikasi sebelum melanjutkan.
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                <button @click="showPaymentModal = false" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 hover:bg-white/5 transition-colors">
+                    Batal
+                </button>
+                <button @click="processPayment()" 
+                        :disabled="!canPay"
+                        class="flex-1 py-3 rounded-xl font-bold bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!isProcessing">Bayar & Cetak</span>
+                    <span x-show="isProcessing"><i class="ri-loader-4-line animate-spin"></i> Memproses...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIPT / STRUK (Hidden, printed via CSS) -->
+    <div id="receipt-print" class="hidden print:block fixed inset-0 bg-white z-[100] text-black p-4">
+        <div class="text-center font-mono text-sm max-w-[58mm] mx-auto">
+            <h2 class="font-bold text-lg mb-1">NOTHING BRAIN</h2>
+            <p class="text-xs mb-4">Singkawang, Kalimantan Barat<br>@nothingbrain.store</p>
+            
+            <div class="border-b border-black border-dashed my-2"></div>
+            
+            <div class="text-left mb-2">
+                <p>No: <span x-text="lastOrder?.id || '-'"></span></p>
+                <p>Tgl: <span x-text="new Date().toLocaleString()"></span></p>
+                <p>Kasir: Staff</p>
+            </div>
+
+            <div class="border-b border-black border-dashed my-2"></div>
+
+            <template x-for="item in lastOrder?.items || []">
+                <div class="flex justify-between mb-1">
+                    <span x-text="item.qty + 'x ' + item.name.substring(0, 15)"></span>
+                    <span x-text="formatRupiah(item.price * item.qty)"></span>
+                </div>
+            </template>
+
+            <div class="border-b border-black border-dashed my-2"></div>
+
+            <div class="flex justify-between font-bold">
+                <span>TOTAL</span>
+                <span x-text="formatRupiah(lastOrder?.total || 0)"></span>
+            </div>
+            
+            <div x-show="lastOrder?.method === 'cash'">
+                <div class="flex justify-between text-xs">
+                    <span>Tunai</span>
+                    <span x-text="formatRupiah(lastOrder?.cash || 0)"></span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span>Kembali</span>
+                    <span x-text="formatRupiah(lastOrder?.change || 0)"></span>
+                </div>
+            </div>
+
+            <div class="border-b border-black border-dashed my-2"></div>
+            <p class="mt-4 text-xs">Terima Kasih!<br>Barang yang dibeli tidak dapat ditukar/dikembalikan.</p>
+        </div>
+    </div>
+</div>
+<!-- End of posApp scope -->
+
+<style>
+    @media print {
+        @page { margin: 0; size: 58mm auto; }
+        body * { visibility: hidden; }
+        #receipt-print, #receipt-print * { visibility: visible; }
+        #receipt-print { position: absolute; left: 0; top: 0; width: 100%; height: auto; display: block !important; }
+    }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Midtrans Snap -->
+{% if midtrans_is_production %}
+<script src="https://app.midtrans.com/snap/snap.js" data-client-key="{{ midtrans_client_key }}"></script>
+{% else %}
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ midtrans_client_key }}"></script>
+{% endif %}
+<script>
+    // Init Supabase
+    var supabaseUrl = '{{ supabase_url }}';
+    var supabaseKey = '{{ supabase_key }}';
+    var supabase = null;
+    
+    if (supabaseUrl && supabaseKey && typeof createClient !== 'undefined') {
+        try {
+            supabase = createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase initialized');
+        } catch (e) {
+            console.error('Supabase Init Error:', e);
+        }
+    } else {
+        console.warn('Supabase credentials missing or SDK not loaded.');
+    }
+
+    console.log('Defining posApp...');
+
+    function posApp() {
+        return {
+            items: [], // Loaded via AJAX
+            cart: [],
+            customerEmail: '',
+            search: '',
+            category: 'all',
+            loading: false,
+
+            init() {
+                // Initial Load
+                this.fetchProducts();
+
+                // Watchers for Debounce Search & Category
+                this.$watch('search', (value) => {
+                    this.debounceFetch();
+                });
+                this.$watch('category', (value) => {
+                    this.fetchProducts();
+                });
+
+                // Subscribe to Stock Updates
+                if (supabase) {
+                    supabase.channel('stock-updates')
+                        .on('broadcast', { event: 'stock_update' }, payload => {
+                            console.log('Stock Update:', payload);
+                            this.updateStock(payload.payload.id, payload.payload.stock);
+                        })
+                        .subscribe();
+                }
+            },
+
+            // Debounce Helper
+            debounceTimer: null,
+            debounceFetch() {
+                if (this.debounceTimer) clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    this.fetchProducts();
+                }, 300);
+            },
+
+            async fetchProducts() {
+                this.loading = true;
+                try {
+                    const params = new URLSearchParams({
+                        q: this.search,
+                        category: this.category
+                    });
+                    const res = await fetch(`{% url 'dashboard:pos_search_api' %}?${params.toString()}`);
+                    const data = await res.json();
+                    this.items = data.items;
+                } catch (e) {
+                    console.error("Fetch Error", e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            updateStock(variantId, newStock) {
+                // Update in items list
+                let item = this.items.find(i => i.id === variantId);
+                if (item) {
+                    item.stock = newStock;
+                }
+                
+                // Update in cart if necessary (optional validation)
+                let cartItem = this.cart.find(c => c.id === variantId);
+                if (cartItem && cartItem.qty > newStock) {
+                    // Alert commented out to avoid spamming
+                    // alert(`Stok untuk ${item.name} berubah menjadi ${newStock}. Keranjang disesuaikan.`);
+                    cartItem.qty = newStock;
+                    if (cartItem.qty <= 0) {
+                        this.cart = this.cart.filter(c => c.id !== variantId);
+                    }
+                }
+            },
+
+            get filteredItems() {
+                // All filtering is now Server-Side.
+                // We just return items, but we can verify client-side if needed.
+                return this.items;
+            },
+
+            // Barcode Scanner / Quick Action
+            handleSearchEnter() {
+                const searchLower = this.search.toLowerCase();
+                
+                // Find exact match
+                const exactMatch = this.items.find(i => 
+                    (i.sku || '').toLowerCase() === searchLower || 
+                    (i.sku || '') === this.search
+                );
+                
+                if (exactMatch) {
+                    this.addToCart(exactMatch);
+                    this.search = '';
+                    this.playBeep();
+                } else if (this.filteredItems.length === 1) {
+                    this.addToCart(this.filteredItems[0]);
+                    this.search = '';
+                    this.playBeep();
+                }
+            },
+
+            playBeep() {
+                // Optional: Play a short beep sound for "scanner feel"
+                // const audio = new Audio('/static/beep.mp3'); 
+                // audio.play();
+            },
+            
+            // ... rest of logic ...
+            
+            // ... rest of logic ...
+            
+            get total() {
+                return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            },
+            
+            get totalItems() {
+                return this.cart.reduce((sum, item) => sum + item.qty, 0);
+            },
+
+            addToCart(item) {
+                if (item.stock <= 0) {
+                    // Flash red or show toast
+                    alert('Stok habis!');
+                    return;
+                }
+                
+                let existing = this.cart.find(c => c.id === item.id);
+                if (existing) {
+                    if (existing.qty < item.stock) {
+                        existing.qty++;
+                    } else {
+                        alert('Max stok tercapai!');
+                    }
+                } else {
+                    this.cart.push({ ...item, qty: 1 });
+                }
+            },
+
+            removeFromCart(index) {
+                this.cart.splice(index, 1);
+            },
+
+            updateQty(index, delta) {
+                let item = this.cart[index];
+                let newItemQty = item.qty + delta;
+                
+                if (newItemQty <= 0) {
+                    this.cart.splice(index, 1); // Or confirm prompt?
+                } else {
+                    // Check stock limit
+                    let product = this.items.find(i => i.id === item.id);
+                    // Note: If product is not in current view (pagination/search), we can't check stock strictly from `this.items`.
+                    // Ideally we trust local cart info or fetch check.
+                    // For now: Only check if product is in filteredItems relative to view.
+                    if (product) {
+                        if (newItemQty > product.stock) {
+                            alert('Stok tidak cukup!');
+                            return;
+                        }
+                    } 
+                    // If product not visible, allow for now (optimistic UI) or block?
+                    item.qty = newItemQty;
+                }
+            },
+
+            formatRupiah(number) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);
+            },
+
+            // --- CHECKOUT LOGIC ---
+            showPaymentModal: false,
+            paymentMethod: 'cash',
+            cashReceived: '',
+            change: 0,
+            isProcessing: false,
+            lastOrder: null, // Untuk struk
+
+            get canPay() {
+                if (this.paymentMethod === 'cash') {
+                    return Number(this.cashReceived) >= this.total;
+                }
+                return true; // QR assume verified manually
+            },
+
+            calculateChange() {
+                const received = Number(this.cashReceived);
+                if (received >= this.total) {
+                    this.change = received - this.total;
+                } else {
+                    this.change = 0;
+                }
+            },
+
+            checkout(method) {
+                this.paymentMethod = method;
+                this.cashReceived = '';
+                this.change = 0;
+                this.showPaymentModal = true;
+            },
+
+            async processPayment() {
+                if (!this.canPay) return;
+                
+                this.isProcessing = true;
+
+                try {
+                    const response = await fetch("{% url 'dashboard:pos_checkout' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            items: this.cart,
+                            total: this.total,
+                            payment_type: this.paymentMethod,
+                            email: this.customerEmail
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        
+                        if (result.payment_type === 'qr' && result.snap_token) {
+                            // --- MIDTRANS SNAP FLOW ---
+                            this.isProcessing = false; // Allow interaction
+                            
+                            window.snap.pay(result.snap_token, {
+                                onSuccess: (snapResult) => {
+                                    // QRIS Scanned successfully, but settlement might be delayed.
+                                    // User requested: "tunggu pembayaran sudah settlement baru invoice lunas"
+                                    
+                                    alert('Pembayaran QRIS Berhasil di-Scan. Menunggu Konfirmasi Sistem (Settlement)...');
+                                    
+                                    // Print Receipt with PENDING status note? Or wait?
+                                    // For now, we finalize visually but maybe add a PENDING note on receipt
+                                    this.lastOrder = {
+                                        id: result.order_id,
+                                        items: JSON.parse(JSON.stringify(this.cart)),
+                                        total: this.total,
+                                        method: 'QRIS (Menunggu Settlement)',
+                                        cash: this.total,
+                                        change: 0,
+                                        date: new Date().toLocaleString()
+                                    };
+                                    
+                                    this.finalizeSuccess(result.order_id, false); // false = don't print immediately if strict? 
+                                    // Or prints "Pending"? Let's just print but label it correctly.
+                                },
+                                onPending: (snapResult) => {
+                                    alert('Pembayaran Pending. Cek status di dashboard nanti.');
+                                    this.finalizeSuccess(result.order_id, false);
+                                },
+                                onError: (snapResult) => {
+                                    alert('Pembayaran Gagal!');
+                                },
+                                onClose: () => {
+                                    alert('Pembayaran Dibatalkan!');
+                                }
+                            });
+
+                        } else {
+                            // --- CASH FLOW ---
+                            this.finalizeSuccess(result.order_id);
+                        }
+
+                    } else {
+                        alert('Gagal: ' + result.message);
+                        this.isProcessing = false;
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Terjadi kesalahan koneksi.');
+                    this.isProcessing = false;
+                }
+            },
+
+            finalizeSuccess(orderId, autoPrint = true) {
+                // If lastOrder not set by specific handler (like QR above), set default here
+                if (!this.lastOrder) {
+                    this.lastOrder = {
+                        id: orderId,
+                        items: JSON.parse(JSON.stringify(this.cart)), // clone
+                        total: this.total,
+                        method: this.paymentMethod,
+                        cash: Number(this.cashReceived),
+                        change: this.change,
+                        date: new Date().toLocaleString()
+                    };
+                }
+
+                // Success Actions
+                this.cart = [];
+                this.showPaymentModal = false;
+                this.isProcessing = false;
+                
+                // Wait modal close transition then print
+                if (autoPrint) {
+                    setTimeout(() => {
+                        window.print();
+                    }, 300);
+                }
+            }
+
+
+        }
+    }
+</script>
+{% endblock %}

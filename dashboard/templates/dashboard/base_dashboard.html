@@ -1,0 +1,249 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard - Nothing Brain{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            black: '#0a0a0a',
+                            dark: '#1a1a1a',
+                            gray: '#2a2a2a',
+                            accent: '#ffffff', // Minimalist White accent
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { background-color: #0f0f0f; color: #e5e5e5; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="font-sans antialiased h-screen flex overflow-hidden lg:flex-row" x-data="{ sidebarOpen: false }">
+
+    <!-- Sidebar -->
+    <!-- Mobile: Fixed, Hidden by default. Desktop: Static (In Flow), Always visible -->
+    <aside class="fixed inset-y-0 left-0 z-50 bg-brand-black border-r border-brand-gray w-72 transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-xl lg:static lg:translate-x-0"
+           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+        
+        <!-- Logo -->
+        <div class="h-20 flex items-center px-8 border-b border-brand-gray">
+            <i class="ri-command-fill text-2xl text-white mr-3"></i>
+            <span class="text-xl font-bold tracking-tighter text-white">NOTHING<span class="text-gray-500">BRAIN</span></span>
+            
+            <!-- Close Button (Mobile Only) -->
+            <button @click="sidebarOpen = false" class="ml-auto lg:hidden text-gray-500 hover:text-white">
+                <i class="ri-close-line text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+            <!-- Main -->
+            <div class="mb-6">
+                <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 font-mono">Main Menu</p>
+                
+                <a href="{% url 'dashboard:home' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if request.resolver_match.url_name == 'home' %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
+                    <i class="ri-dashboard-3-line text-lg {% if request.resolver_match.url_name == 'home' %}text-brand-accent{% endif %}"></i>
+                    <span class="font-medium text-sm">Dashboard</span>
+                </a>
+                
+                <a href="{% url 'dashboard:pos' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if request.resolver_match.url_name == 'pos' %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
+                    <i class="ri-store-2-line text-lg {% if request.resolver_match.url_name == 'pos' %}text-brand-accent{% endif %}"></i>
+                    <span class="font-medium text-sm">POS System</span>
+                </a>
+            </div>
+
+            <!-- Management -->
+            <div class="mb-6">
+                <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 font-mono">Management</p>
+
+                <a href="{% url 'dashboard:product_manage' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if 'product' in request.path %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
+                    <i class="ri-t-shirt-air-line text-lg {% if 'product' in request.path %}text-brand-accent{% endif %}"></i>
+                    <span class="font-medium text-sm">Products</span>
+                </a>
+                
+                <a href="{% url 'dashboard:order_list' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if 'orders' in request.path %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
+                    <i class="ri-shopping-cart-2-line text-lg {% if 'orders' in request.path %}text-brand-accent{% endif %}"></i>
+                    <span class="font-medium text-sm">Orders</span>
+                </a>
+                
+                <a href="#" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent text-gray-500 hover:bg-white/5 hover:text-white cursor-not-allowed opacity-50">
+                    <i class="ri-user-heart-line text-lg"></i>
+                    <span class="font-medium text-sm">Customers <span class="text-[9px] bg-white/10 px-1 m-1 rounded text-white">SOON</span></span>
+                </a>
+            </div>
+
+            <!-- Link ke Store Depan -->
+            <div class="mt-auto pt-6 border-t border-white/5">
+                <p class="px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 font-mono">Shortcuts</p>
+                
+                <a href="{% url 'store:landing_page' %}" target="_blank" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="ri-external-link-line text-lg"></i>
+                    <span class="font-medium text-sm">Live Store</span>
+                </a>
+                <a href="/admin/" target="_blank" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+                    <i class="ri-shield-keyhole-line text-lg"></i>
+                    <span class="font-medium text-sm">Django Admin</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full relative z-0 overflow-hidden bg-[#0f0f0f]">
+        
+        <!-- Top Navbar -->
+        <header class="h-20 border-b border-brand-gray bg-brand-black/50 backdrop-blur-xl flex items-center justify-between px-8 sticky top-0 z-30">
+            <!-- Mobile Toggle & Title -->
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="ri-menu-line text-2xl"></i>
+                </button>
+                <div class="hidden md:block">
+                    <h2 class="text-xl font-bold text-white tracking-tight">{% block header_title %}Overview{% endblock %}</h2>
+                    <p class="text-xs text-gray-500">Welcome back, {{ request.user.first_name|default:request.user.username }}</p>
+                </div>
+            </div>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-6">
+                <!-- Search -->
+                <!-- Search -->
+                <div class="hidden md:flex items-center bg-white/5 border border-white/10 rounded-full px-4 py-2 w-64 focus-within:border-white/30 transition-colors">
+                    <i class="ri-search-line text-gray-500 mr-2"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Cari Order ID..." class="bg-transparent border-none text-sm text-white placeholder-gray-500 focus:outline-none w-full" onkeypress="handleGlobalSearch(event)">
+                </div>
+                <script>
+                    function handleGlobalSearch(e) {
+                        if (e.key === 'Enter') {
+                            const val = e.target.value.trim();
+                            if (val && !isNaN(val)) {
+                                window.location.href = "/dashboard/orders/" + val + "/";
+                            } else {
+                                alert("Mohon masukkan Nomor Order (ID) berupa angka.");
+                            }
+                        }
+                    }
+                </script>
+
+                <!-- Notifications -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="relative text-gray-400 hover:text-white transition-colors pt-2">
+                        <i class="ri-notification-3-line text-xl"></i>
+                        {% if low_stock_count > 0 %}
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-black animate-pulse"></span>
+                        {% endif %}
+                    </button>
+                    
+                    <!-- Dropdown -->
+                    <div x-show="open" @click.away="open = false" 
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-3 w-80 bg-brand-black border border-brand-gray rounded-xl shadow-2xl z-50 overflow-hidden" style="display: none;">
+                        
+                        <div class="p-4 border-b border-brand-gray bg-white/5">
+                            <h4 class="font-bold text-white text-sm">Notifikasi</h4>
+                        </div>
+                        
+                        <div class="max-h-64 overflow-y-auto">
+                            {% if low_stock_count > 0 %}
+                                <div class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest mt-2">Stok Menipis ({{ low_stock_count }})</div>
+                                {% for item in low_stock_items %}
+                                <a href="{% url 'dashboard:product_edit' item.product.id %}" class="block px-4 py-3 hover:bg-white/5 transition-colors border-b border-gray-800 last:border-0">
+                                    <div class="flex items-start gap-3">
+                                        <div class="text-orange-500 bg-orange-500/10 p-2 rounded-lg"><i class="ri-alert-line"></i></div>
+                                        <div>
+                                            <p class="text-white text-sm font-medium">{{ item.product.name }}</p>
+                                            <p class="text-gray-400 text-xs">{{ item.color }} / {{ item.size }} - Sisa: <span class="text-red-400 font-bold">{{ item.stock }}</span></p>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="ri-notification-off-line text-3xl mb-2"></i>
+                                    <p class="text-sm">Tidak ada notifikasi baru</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Dropdown -->
+                <div class="flex items-center gap-3 pl-6 border-l border-brand-gray">
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-bold text-white">{{ request.user.username }}</p>
+                        <p class="text-xs text-brand-accent">Administrator</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-gray to-black border border-brand-gray flex items-center justify-center text-white font-bold shadow-lg">
+                        {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-8 scroll-smooth relative">
+            <!-- Background Glow -->
+            <div class="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-accent/5 to-transparent pointer-events-none"></div>
+            
+            <div class="relative z-10 max-w-7xl mx-auto space-y-8 pb-20">
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- Footer -->
+            <footer class="mt-auto py-8 text-center border-t border-brand-gray/50 text-gray-600 text-sm">
+                <p>&copy; {% now "Y" %} Nothing Brain. All rights reserved.</p>
+                <p class="text-xs mt-1">Version 2.0.0 &bull; Server Time: {% now "H:i" %}</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Overlay for mobile sidebar -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         style="display: none;"></div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

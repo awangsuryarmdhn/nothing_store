@@ -3,10 +3,13 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
+# ==========================================
+# 1. CMS / KONTEN HALAMAN
+# ==========================================
 
 class AboutPageContent(models.Model):
     title = models.CharField("Judul Halaman", max_length=100, default="TENTANG NOTHING_BRAIN")
@@ -38,6 +41,52 @@ class LandingPageContent(models.Model):
         return "Pengaturan Konten Landing Page"
 
 
+class LookbookImage(models.Model):
+    image = models.ImageField("Gambar Lookbook", upload_to='lookbook/')
+    order = models.PositiveIntegerField("Urutan", default=0, help_text="Urutan kecil tampil duluan.")
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Gambar Lookbook"
+        verbose_name_plural = "Gambar Lookbook"
+
+    def __str__(self):
+        return f"Gambar Lookbook #{self.order}"
+
+
+# ==========================================
+# 2. USER & PROFILE
+# ==========================================
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    image = models.ImageField("Foto Profil", default='default.jpg', upload_to='profile_pics')
+
+    def __str__(self):
+        return f'Profil {self.user.username}'
+
+
+class Address(models.Model):
+    user = models.ForeignKey(User, related_name='addresses', on_delete=models.CASCADE)
+    full_name = models.CharField("Nama Lengkap", max_length=100)
+    phone_number = models.CharField("Nomor Telepon", max_length=20)
+    address_line = models.CharField("Alamat", max_length=250)
+    city = models.CharField("Kota", max_length=100)
+    postal_code = models.CharField("Kode Pos", max_length=20)
+    is_default = models.BooleanField("Jadikan Alamat Utama", default=False)
+
+    class Meta:
+        verbose_name = "Alamat"
+        verbose_name_plural = "Alamat"
+
+    def __str__(self):
+        return f"Alamat untuk {self.user.username}"
+
+
+# ==========================================
+# 3. PRODUK & KATEGORI
+# ==========================================
+
 class Category(models.Model):
     name = models.CharField("Nama Kategori", max_length=200, db_index=True)
     slug = models.SlugField("Slug", max_length=200, unique=True)
@@ -67,50 +116,12 @@ class FeaturedCollection(models.Model):
         return self.title
 
 
-class LookbookImage(models.Model):
-    image = models.ImageField("Gambar Lookbook", upload_to='lookbook/')
-    order = models.PositiveIntegerField("Urutan", default=0, help_text="Gambar dengan urutan lebih kecil akan tampil lebih dulu.")
-
-    class Meta:
-        ordering = ['order']
-        verbose_name = "Gambar Lookbook"
-        verbose_name_plural = "Gambar Lookbook"
-
-    def __str__(self):
-        return f"Gambar Lookbook #{self.order}"
-
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.ImageField("Foto Profil", default='default.jpg', upload_to='profile_pics')
-
-    def __str__(self):
-        return f'Profil {self.user.username}'
-
-
-class Address(models.Model):
-    user = models.ForeignKey(User, related_name='addresses', on_delete=models.CASCADE)
-    full_name = models.CharField("Nama Lengakap", max_length=100)
-    phone_number = models.CharField("Nomor Telepon", max_length=20)
-    address_line = models.CharField("Alamat", max_length=250)
-    city = models.CharField("Kota", max_length=100)
-    postal_code = models.CharField("Kode Pos", max_length=20)
-    is_default = models.BooleanField("Jadikan Alamat Utama", default=False)
-
-    class Meta:
-        verbose_name = "Alamat"
-        verbose_name_plural = "Alamat"
-
-    def __str__(self):
-        return f"Alamat untuk {self.user.username}"
-
-
 class Product(models.Model):
     category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE, verbose_name="Kategori")
     name = models.CharField("Nama Produk", max_length=200, db_index=True)
     slug = models.SlugField("Slug", max_length=200, db_index=True)
     description = models.TextField("Deskripsi", blank=True)
-    price = models.DecimalField("Harga Dasar", max_digits=10, decimal_places=0, help_text="Harga dasar produk.")
+    price = models.DecimalField("Harga Dasar", max_digits=10, decimal_places=0, help_text="Harga default produk.")
     available = models.BooleanField("Tersedia", default=True)
     created = models.DateTimeField("Dibuat", auto_now_add=True)
     updated = models.DateTimeField("Diperbarui", auto_now=True)
@@ -151,12 +162,21 @@ class ProductImage(models.Model):
 
 
 class ProductVariant(models.Model):
-    SIZE_CHOICES = [('S', 'Small'), ('M', 'Medium'), ('L', 'Large'), ('XL', 'Extra Large')]
+    SIZE_CHOICES = [('ALL', 'All Size'), ('S', 'Small'), ('M', 'Medium'), ('L', 'Large'), ('XL', 'Extra Large')]
 
     product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
     color = models.CharField("Nama Warna", max_length=50, help_text="Contoh: Hitam, Putih, Merah")
     size = models.CharField("Ukuran", max_length=10, choices=SIZE_CHOICES)
     stock = models.PositiveIntegerField("Stok", default=0)
+    
+    price = models.DecimalField(
+        "Harga Varian", 
+        max_digits=10, 
+        decimal_places=0, 
+        null=True, 
+        blank=True, 
+        help_text="Isi jika harga berbeda dari produk utama. Kosongkan jika sama."
+    )
 
     class Meta:
         constraints = [
@@ -170,7 +190,17 @@ class ProductVariant(models.Model):
 
     def __str__(self):
         return f'{self.product.name} - {self.color} ({self.size})'
+    
+    @property
+    def get_active_price(self):
+        if self.price is not None and self.price > 0:
+            return self.price
+        return self.product.price
 
+
+# ==========================================
+# 4. ORDER & COUPON
+# ==========================================
 
 class Coupon(models.Model):
     code = models.CharField("Kode Kupon", max_length=50, unique=True)
@@ -206,13 +236,16 @@ class Order(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     midtrans_snap_token = models.CharField(max_length=100, blank=True, null=True)
 
+    channel = models.CharField("Channel", max_length=20, choices=[('online', 'Online Store'), ('pos', 'POS')], default='online')
+    cashier = models.ForeignKey(User, related_name='processed_orders', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kasir")
+
     class Meta:
         ordering = ('-created',)
         verbose_name = 'pesanan'
         verbose_name_plural = 'pesanan'
 
     def __str__(self):
-        return f'Pesanan {self.id}'
+        return f'Pesanan #{self.id} - {self.first_name} ({self.channel})'
 
     def get_total_cost(self):
         subtotal = sum(item.get_cost() for item in self.items.all())
@@ -223,7 +256,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name='order_items', on_delete=models.CASCADE)
     variant = models.ForeignKey(ProductVariant, related_name='order_items', on_delete=models.SET_NULL, null=True)
-    price = models.DecimalField("Harga", max_digits=10, decimal_places=0)
+    price = models.DecimalField("Harga Saat Beli", max_digits=10, decimal_places=0) 
     quantity = models.PositiveIntegerField("Jumlah", default=1)
 
     class Meta:
@@ -231,31 +264,63 @@ class OrderItem(models.Model):
         verbose_name_plural = 'item pesanan'
 
     def __str__(self):
-        return str(self.id)
+        # UPDATE: Tampilan lebih informatif di Admin
+        if self.variant:
+            return f"{self.quantity}x {self.product.name} ({self.variant.color}/{self.variant.size})"
+        return f"{self.quantity}x {self.product.name}"
 
     def get_cost(self):
         return self.price * self.quantity
     
+    def save(self, *args, **kwargs):
+        # UPDATE: Logika Otomatis Opsi 2 (Denormalisasi Terkontrol)
+        # Jika variant dipilih, otomatis isi kolom product
+        if self.variant and not self.product_id:
+            self.product = self.variant.product
+        super().save(*args, **kwargs)
+
 
 class OfflineSale(models.Model):
-    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=0)
+    """
+    DEPRECATED: Gunakan model Order dengan channel='pos' untuk transaksi offline kedepannya.
+    Model ini dipertahankan sementara untuk histori data lama.
+    """
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, verbose_name="Produk Varian")
+    quantity = models.PositiveIntegerField("Jumlah Terjual")
+    price = models.DecimalField("Harga Total", max_digits=10, decimal_places=0)
 
     channel = models.CharField(
+        "Saluran Penjualan",
         max_length=50,
         choices=[
-            ('offline', 'Offline'),
+            ('offline', 'Offline Store'),
             ('wa', 'WhatsApp'),
             ('ig', 'Instagram'),
-            ('mp', 'Marketplace'),
+            ('mp', 'Marketplace Lain'),
         ]
     )
 
-    staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    note = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Admin Pencatat")
+    note = models.TextField("Catatan", blank=True)
+    created_at = models.DateTimeField("Tanggal Transaksi", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Penjualan Manual/Offline (Lama)"
+        verbose_name_plural = "Penjualan Manual/Offline (Lama)"
 
     def __str__(self):
         return f"{self.variant} - {self.channel}"
 
+    def clean(self):
+        # Validasi stok sebelum simpan
+        if self.quantity > self.variant.stock:
+            raise ValidationError(f"Stok tidak cukup! Sisa stok: {self.variant.stock}")
+
+    def save(self, *args, **kwargs):
+        # UPDATE: Potong stok otomatis saat admin input penjualan offline
+        # Cek apakah ini data baru (belum punya ID) agar stok tidak terpotong 2x saat edit
+        if not self.pk: 
+            self.variant.stock -= self.quantity
+            self.variant.save()
+        
+        super().save(*args, **kwargs)

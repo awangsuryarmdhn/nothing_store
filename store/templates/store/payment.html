@@ -1,19 +1,84 @@
 {% extends "store/base.html" %}
+{% load static %}
+{% load humanize %}
 
-{% block title %}Pembayaran{% endblock %}
+{% block title %}Selesaikan Pembayaran | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-24 text-center">
-    <h1 class="text-4xl font-display mb-4">Selesaikan Pembayaran Anda</h1>
-    <p class="text-base-content/70 mb-8">Anda akan diarahkan ke halaman pembayaran Midtrans.</p>
-    <button id="pay-button" class="btn btn-primary btn-lg">Bayar Sekarang</button>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    .font-display { font-family: 'Oswald', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Pola Background Halus */
+    .bg-pattern {
+        background-color: #f3f4f6;
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+</style>
+
+<div class="min-h-[85vh] flex items-center justify-center py-12 px-4 bg-pattern">
+    
+    <div class="max-w-md w-full bg-white shadow-2xl rounded-3xl overflow-hidden border border-gray-100 relative">
+        <div class="h-2 w-full bg-black"></div>
+
+        <div class="p-8 text-center">
+            
+            <div class="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 text-black mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            </div>
+
+            <h1 class="text-3xl font-display font-bold uppercase tracking-tight mb-2">Payment Due</h1>
+            <p class="text-gray-500 text-sm mb-8">Selesaikan pembayaran untuk memproses pesanan.</p>
+
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-8">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200 border-dashed">
+                    <span class="text-xs text-gray-500 uppercase tracking-widest font-bold">Order ID</span>
+                    <span class="font-mono text-sm font-bold">#{{ order.id|default:"Unknown" }}</span>
+                </div>
+                
+                <div class="text-center">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Total Amount</span>
+                    <div class="text-4xl font-display font-bold text-black">
+                        Rp {{ order.get_total_price|add:15000|intcomma }}
+                    </div>
+                </div>
+            </div>
+
+            <button id="pay-button" class="w-full bg-black text-white py-4 rounded-full font-bold uppercase tracking-[0.15em] hover:bg-gray-800 hover:scale-[1.02] transition-all duration-300 shadow-lg text-sm flex items-center justify-center gap-2 group">
+                <span>Bayar Sekarang</span>
+                <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+
+            <div class="mt-6 flex items-center justify-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Secured by Midtrans
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 px-8 py-4 border-t border-gray-100 flex justify-between items-center">
+            <a href="{% url 'store:order_create' %}" class="text-xs font-bold text-gray-400 hover:text-black transition-colors">Batal</a>
+            <span class="text-[10px] text-gray-300 font-mono">ENCRYPTED: 256-BIT</span>
+        </div>
+    </div>
 </div>
 
 <script src="https://app.midtrans.com/snap/snap.js" data-client-key="{{ client_key }}"></script>
+
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
         const payButton = document.getElementById('pay-button');
+        const originalText = payButton.innerHTML;
+        
         payButton.addEventListener('click', function () {
+            // Ubah tombol jadi loading state
+            payButton.disabled = true;
+            payButton.innerHTML = '<span class="loading loading-spinner loading-sm"></span> Processing...';
+            payButton.classList.add('opacity-70', 'cursor-not-allowed');
+
             window.snap.pay('{{ snap_token }}', {
                 onSuccess: function(result){
                     console.log('success', result);
@@ -25,16 +90,26 @@
                 },
                 onError: function(result){
                     console.log('error', result);
-                    alert("Pembayaran gagal!");
+                    // Reset tombol jika error agar bisa dicoba lagi
+                    payButton.disabled = false;
+                    payButton.innerHTML = originalText;
+                    payButton.classList.remove('opacity-70', 'cursor-not-allowed');
+                    alert("Pembayaran gagal! Silakan coba lagi.");
                 },
                 onClose: function(){
-                    alert('Anda menutup popup tanpa menyelesaikan pembayaran');
+                    console.log('customer closed the popup without finishing the payment');
+                    // Reset tombol jika popup ditutup
+                    payButton.disabled = false;
+                    payButton.innerHTML = originalText;
+                    payButton.classList.remove('opacity-70', 'cursor-not-allowed');
                 }
             });
         });
 
-        // Otomatis klik tombol bayar saat halaman dimuat
-        payButton.click();
+        // Auto-trigger dengan sedikit delay agar UI terlihat smooth
+        setTimeout(() => {
+            payButton.click();
+        }, 800);
     });
 </script>
 {% endblock %}

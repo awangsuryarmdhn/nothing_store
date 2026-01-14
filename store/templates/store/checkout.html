@@ -1,196 +1,332 @@
 {% extends "store/base.html" %}
 {% load static %}
+{% load humanize %}
 
-{% block title %}Checkout{% endblock %}
+{% block title %}Secure Checkout | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-12">
-    <div class="text-center pb-12">
-        <h1 class="text-6xl font-display">Checkout</h1>
-    </div>
-    
-    <div class="max-w-4xl mx-auto">
-        <ul class="steps w-full mb-12">
-            <li class="step step-primary">Alamat</li>
-            <li class="step">Pembayaran</li>
-            <li class="step">Konfirmasi</li>
-        </ul>
-    </div>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <!-- Kolom Kiri: Form Alamat & Pengiriman -->
-        <div class="card bg-base-200 p-8">
-            <form action="." method="post" class="space-y-8">
-                {% csrf_token %}
-                <div>
-                    <h3 class="text-2xl font-display mb-6">1. Detail Pengiriman</h3>
-                    <!-- Bagian Alamat -->
-                    {% if saved_addresses %}
-                    <div class="mb-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold">Pilih Alamat</h3>
-                            <button type="button" class="btn btn-outline btn-xs" onclick="add_address_modal.showModal()">+ Tambah Baru</button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {% for address in saved_addresses %}
-                            <div class="card card-compact bg-base-100 border-2 {% if address.is_default %}border-primary{% else %}border-transparent{% endif %} cursor-pointer address-card"
-                                 data-fullname="{{ address.full_name }}" data-phone="{{ address.phone_number }}" data-address="{{ address.address_line }}" data-city="{{ address.city }}" data-postal="{{ address.postal_code }}">
-                                <div class="card-body">
-                                    <p class="font-bold">{{ address.full_name }}</p>
-                                    <p class="text-sm opacity-70">{{ address.address_line }}</p>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
+<style>
+    /* Global Styles for this page */
+    body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
+    .font-display { font-family: 'Oswald', sans-serif; }
+    
+    /* CUSTOM FORM STYLING (Override Default Django Inputs) */
+    /* Ini membuat input field terlihat modern (Underline style) */
+    .custom-form input[type="text"],
+    .custom-form input[type="email"],
+    .custom-form input[type="number"],
+    .custom-form textarea,
+    .custom-form select {
+        width: 100%;
+        background-color: transparent;
+        border: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 12px 0;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        border-radius: 0;
+    }
+    
+    .custom-form input:focus,
+    .custom-form select:focus {
+        outline: none;
+        border-bottom-color: #000;
+        box-shadow: none;
+    }
+
+    .custom-form label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+        margin-bottom: 2px;
+        font-weight: 600;
+    }
+
+    /* Hide scrollbar for cleaner look */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    
+    /* Active State for Address Card */
+    .address-card.selected {
+        border-color: #000;
+        background-color: #fff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .address-card.selected .check-icon { opacity: 1; }
+</style>
+
+<div class="min-h-screen pt-8 pb-20">
+    <div class="container mx-auto px-4 lg:px-8 max-w-screen-xl">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-gray-200 pb-6">
+            <h1 class="text-3xl md:text-4xl font-display font-bold uppercase tracking-tight">Checkout</h1>
+            
+            <div class="flex items-center gap-4 mt-4 md:mt-0 text-xs md:text-sm font-bold uppercase tracking-widest">
+                <span class="text-black border-b-2 border-black pb-1">1. Information</span>
+                <span class="text-gray-300">&rarr;</span>
+                <span class="text-gray-400">2. Payment</span>
+                <span class="text-gray-300">&rarr;</span>
+                <span class="text-gray-400">3. Complete</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            
+            <div class="lg:col-span-7 bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100">
+                
+                {% if saved_addresses %}
+                <div class="mb-10">
+                    <div class="flex justify-between items-end mb-6">
+                        <h2 class="font-display text-xl font-bold uppercase">Saved Addresses</h2>
+                        <button type="button" onclick="add_address_modal.showModal()" class="text-xs font-bold uppercase tracking-wider text-black border-b border-black hover:text-gray-600 hover:border-gray-600 transition-colors">
+                            + Add New
+                        </button>
                     </div>
-                    <div class="divider">ATAU</div>
-                    {% endif %}
-                    <div class="space-y-4 mt-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">{{ form.first_name.label }}</span></label>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for address in saved_addresses %}
+                        <div class="address-card cursor-pointer relative border-2 {% if address.is_default %}border-black selected{% else %}border-gray-100{% endif %} rounded-xl p-5 hover:border-gray-300 transition-all duration-200 group"
+                             data-fullname="{{ address.full_name }}" 
+                             data-phone="{{ address.phone_number }}" 
+                             data-address="{{ address.address_line }}" 
+                             data-city="{{ address.city }}" 
+                             data-postal="{{ address.postal_code }}">
+                            
+                            <div class="check-icon absolute top-4 right-4 opacity-0 transition-opacity duration-200 text-black">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+
+                            <p class="font-bold text-sm uppercase tracking-wide mb-1">{{ address.full_name }}</p>
+                            <p class="text-xs text-gray-500 leading-relaxed">
+                                {{ address.address_line }}<br>
+                                {{ address.city }}, {{ address.postal_code }}<br>
+                                <span class="text-gray-400 mt-1 block">{{ address.phone_number }}</span>
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="relative flex py-8 items-center">
+                        <div class="flex-grow border-t border-gray-100"></div>
+                        <span class="flex-shrink-0 mx-4 text-xs text-gray-400 uppercase tracking-widest">Or enter manually</span>
+                        <div class="flex-grow border-t border-gray-100"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form action="." method="post" class="custom-form space-y-8" id="checkout-form">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <h2 class="font-display text-xl font-bold uppercase mb-6 flex items-center gap-2">
+                            Contact Info
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="{{ form.first_name.id_for_label }}">First Name</label>
                                 {{ form.first_name }}
                             </div>
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">{{ form.last_name.label }}</span></label>
+                            <div>
+                                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
                                 {{ form.last_name }}
                             </div>
-                        </div>
-                        <div class="form-control">
-                            <label class="label"><span class="label-text">{{ form.email.label }}</span></label>
-                            {{ form.email }}
-                        </div>
-                        <div class="form-control">
-                            <label class="label"><span class="label-text">{{ form.address.label }}</span></label>
-                            {{ form.address }}
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">{{ form.city.label }}</span></label>
-                                {{ form.city }}
-                            </div>
-                            <div class="form-control">
-                                <label class="label"><span class="label-text">{{ form.postal_code.label }}</span></label>
-                                {{ form.postal_code }}
+                            <div class="md:col-span-2">
+                                <label for="{{ form.email.id_for_label }}">Email Address</label>
+                                {{ form.email }}
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div>
-                    <h3 class="text-2xl font-display mb-6">2. Opsi Pengiriman</h3>
-                    <div class="form-control">
-                        <label class="label cursor-pointer card bg-base-100 p-4 rounded-lg border-2 border-primary">
+                    <div>
+                        <h2 class="font-display text-xl font-bold uppercase mb-6 mt-10">Shipping Address</h2>
+                        <div class="space-y-6">
                             <div>
-                                <span class="label-text font-bold">Jasa Kirim Toko</span>
-                                <p class="text-sm text-base-content/70">Estimasi 2-3 hari kerja.</p>
+                                <label for="{{ form.address.id_for_label }}">Street Address</label>
+                                {{ form.address }}
                             </div>
-                            <input type="radio" name="shipping_option" class="radio radio-primary" checked />
-                        </label>
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label for="{{ form.city.id_for_label }}">City</label>
+                                    {{ form.city }}
+                                </div>
+                                <div>
+                                    <label for="{{ form.postal_code.id_for_label }}">Postal Code</label>
+                                    {{ form.postal_code }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="font-display text-xl font-bold uppercase mb-6 mt-10">Shipping Method</h2>
+                        <div class="border border-black bg-gray-50 rounded-xl p-4 flex items-center justify-between cursor-pointer">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="shipping_option" class="radio radio-xs checked:bg-black border-gray-400" checked />
+                                <div>
+                                    <span class="block text-sm font-bold uppercase tracking-wide">Standard Delivery</span>
+                                    <span class="block text-xs text-gray-500">Estimasi 2-4 Hari Kerja</span>
+                                </div>
+                            </div>
+                            <span class="text-sm font-bold">Rp 15.000</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-6">
+                        <button type="submit" class="w-full bg-black text-white py-5 rounded-full font-bold uppercase tracking-[0.2em] hover:bg-gray-800 hover:scale-[1.01] transition-all duration-300 shadow-lg text-sm">
+                            Proceed to Payment
+                        </button>
+                        <p class="text-center text-[10px] text-gray-400 mt-4 uppercase tracking-wider flex justify-center items-center gap-2">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            Secure Encrypted Checkout
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="lg:col-span-5 w-full">
+                <div class="bg-white p-6 md:p-8 rounded-3xl border border-gray-200 sticky top-10 shadow-xl shadow-gray-100/50">
+                    <h3 class="font-display text-2xl font-bold uppercase mb-6 border-b border-gray-100 pb-4">Order Summary</h3>
+                    
+                    <div class="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-1 mb-6">
+                        {% for item in cart %}
+                        <div class="flex gap-4 items-center">
+                            <div class="w-16 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-100">
+                                {% if item.product.main_image %}
+                                    <img src="{{ item.product.main_image.image.url }}" class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">No Img</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex-1">
+                                <h4 class="font-bold text-sm uppercase leading-tight">{{ item.product.name }}</h4>
+                                <p class="text-xs text-gray-500 mt-0.5">Size: {{ item.variant.size }} <span class="mx-1">|</span> Qty: {{ item.quantity }}</p>
+                            </div>
+                            
+                            <p class="font-bold text-sm">Rp {{ item.total_price|intcomma }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="space-y-3 py-6 border-t border-gray-100 bg-gray-50/50 -mx-6 md:-mx-8 px-6 md:px-8">
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Subtotal</span>
+                            <span class="font-medium text-black">Rp {{ cart.get_total_price|intcomma }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Shipping</span>
+                            <span class="font-medium text-black">Rp 15.000</span>
+                        </div>
+                        
+                        <div class="border-t border-dashed border-gray-300 my-2"></div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="font-display font-bold text-xl uppercase">Total</span>
+                            <span class="font-display font-bold text-xl uppercase">Rp {{ cart.get_total_price|add:15000|intcomma }}</span>
+                        </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg w-full mt-6">Lanjut ke Pembayaran</button>
-            </form>
-        </div>
-        
-        <!-- Kolom Kanan: Ringkasan Pesanan -->
-        <div class="card bg-base-200 p-8 self-start sticky top-24">
-            <h3 class="text-3xl font-display mb-6">Ringkasan Pesanan</h3>
-            <div class="space-y-4">
-                {% for item in cart %}
-                    <div class="flex justify-between items-center">
-                        <p>{{ item.product.name }} (x{{ item.quantity }})</p>
-                        <p class="font-semibold">Rp {{ item.total_price|floatformat:0 }}</p>
-                    </div>
-                {% endfor %}
             </div>
-            <div class="divider my-6"></div>
-            <div class="space-y-2">
-                <div class="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>Rp {{ cart.get_total_price|floatformat:0 }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>Pengiriman</span>
-                    <span>Rp 15000</span>
-                </div>
-            </div>
-            <div class="divider my-4"></div>
-            <div class="flex justify-between text-xl font-bold">
-                <span>Total</span>
-                <span>Rp {{ cart.get_total_price|add:15000|floatformat:0 }}</span>
-            </div>
+
         </div>
     </div>
 </div>
 
-<!-- Modal untuk Tambah Alamat -->
-<dialog id="add_address_modal" class="modal">
-  <div class="modal-box">
+<dialog id="add_address_modal" class="modal backdrop-blur-sm">
+  <div class="modal-box bg-white rounded-3xl p-8 max-w-lg shadow-2xl">
     <form method="dialog">
-      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+      <button class="absolute right-4 top-4 text-gray-400 hover:text-black transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
     </form>
-    <h3 class="font-bold text-lg">Tambah Alamat Baru</h3>
-    <form method="post" action="{% url 'store:address_add_from_checkout' %}" class="space-y-4 py-4">
+    
+    <h3 class="font-display text-2xl font-bold uppercase mb-6">Add New Address</h3>
+    
+    <form method="post" action="{% url 'store:address_add_from_checkout' %}" class="custom-form space-y-4">
         {% csrf_token %}
-        <div class="form-control">
-            <label class="label"><span class="label-text">{{ address_form.full_name.label }}</span></label>
+        <div>
+            <label>{{ address_form.full_name.label }}</label>
             {{ address_form.full_name }}
         </div>
-        <div class="form-control">
-            <label class="label"><span class="label-text">{{ address_form.phone_number.label }}</span></label>
+        <div>
+            <label>{{ address_form.phone_number.label }}</label>
             {{ address_form.phone_number }}
         </div>
-        <div class="form-control">
-            <label class="label"><span class="label-text">{{ address_form.address_line.label }}</span></label>
+        <div>
+            <label>{{ address_form.address_line.label }}</label>
             {{ address_form.address_line }}
         </div>
         <div class="grid grid-cols-2 gap-4">
-            <div class="form-control">
-                <label class="label"><span class="label-text">{{ address_form.city.label }}</span></label>
+            <div>
+                <label>{{ address_form.city.label }}</label>
                 {{ address_form.city }}
             </div>
-            <div class="form-control">
-                <label class="label"><span class="label-text">{{ address_form.postal_code.label }}</span></label>
+            <div>
+                <label>{{ address_form.postal_code.label }}</label>
                 {{ address_form.postal_code }}
             </div>
         </div>
-        <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-4">
-                {{ address_form.is_default }}
-                <span class="label-text">{{ address_form.is_default.label }}</span> 
-            </label>
+        
+        <div class="flex items-center gap-3 pt-2">
+            {{ address_form.is_default }}
+            <label for="{{ address_form.is_default.id_for_label }}" class="!normal-case !mb-0 cursor-pointer">Set as default address</label>
         </div>
-        <div class="modal-action">
-          <button type="submit" class="btn btn-primary">Simpan Alamat</button>
+
+        <div class="pt-6">
+            <button type="submit" class="w-full bg-black text-white py-3 rounded-full font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-colors">
+                Save Address
+            </button>
         </div>
     </form>
   </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
 </dialog>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const addressCards = document.querySelectorAll('.address-card');
-    const formFirstName = document.querySelector('[name="first_name"]');
-    const formLastName = document.querySelector('[name="last_name"]');
-    const formEmail = document.querySelector('[name="email"]');
-    const formAddress = document.querySelector('[name="address"]');
-    const formCity = document.querySelector('[name="city"]');
-    const formPostal = document.querySelector('[name="postal_code"]');
+    
+    // Target fields by standard Django IDs (id_fieldname)
+    const inputs = {
+        firstName: document.getElementById('id_first_name'),
+        lastName: document.getElementById('id_last_name'),
+        email: document.getElementById('id_email'), // Optional, usually not in address model
+        address: document.getElementById('id_address'),
+        city: document.getElementById('id_city'),
+        postalCode: document.getElementById('id_postal_code')
+    };
 
     addressCards.forEach(card => {
         card.addEventListener('click', () => {
-            const fullName = card.dataset.fullname.split(' ');
-            formFirstName.value = fullName[0];
-            formLastName.value = fullName.slice(1).join(' ');
-            formAddress.value = card.dataset.address;
-            formCity.value = card.dataset.city;
-            formPostal.value = card.dataset.postal;
+            // 1. Visual Selection Logic
+            addressCards.forEach(c => {
+                c.classList.remove('selected', 'border-black');
+                c.classList.add('border-gray-100');
+            });
+            card.classList.add('selected', 'border-black');
+            card.classList.remove('border-gray-100');
 
-            addressCards.forEach(c => c.classList.remove('border-primary'));
-            card.classList.add('border-primary');
+            // 2. Data Population Logic
+            const fullName = card.dataset.fullname.trim().split(' ');
+            const firstName = fullName[0];
+            const lastName = fullName.slice(1).join(' ');
+
+            if(inputs.firstName) inputs.firstName.value = firstName;
+            if(inputs.lastName) inputs.lastName.value = lastName;
+            if(inputs.address) inputs.address.value = card.dataset.address;
+            if(inputs.city) inputs.city.value = card.dataset.city;
+            if(inputs.postalCode) inputs.postalCode.value = card.dataset.postal;
+            
+            // Optional: Scroll to form smoothly
+            // document.getElementById('checkout-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
 });
 </script>
+
 {% endblock %}

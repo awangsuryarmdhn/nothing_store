@@ -1,0 +1,112 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+
+{% block header_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-8 rounded-2xl max-w-4xl mx-auto">
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+        
+        <!-- Product Main Info -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-white font-bold mb-4 flex items-center gap-2"><i class="ri-information-line"></i> Informasi Dasar</h3>
+                    <div class="space-y-4">
+                        {% for field in form %}
+                            {% if field.name != 'images' %}
+                            <div>
+                                <label class="text-sm font-medium text-gray-400 block mb-1">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Images & Bulk Upload -->
+            <div class="space-y-6">
+                 <h3 class="text-white font-bold mb-4 flex items-center gap-2"><i class="ri-image-line"></i> Galeri Produk</h3>
+                 
+                 <!-- Bulk Upload "Dropzone" -->
+                 <div class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center hover:border-brand-accent hover:bg-white/5 transition-colors cursor-pointer relative group"
+                      onclick="document.getElementById('bulk-image-upload').click()">
+                    
+                    <div class="flex flex-col items-center justify-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-brand-accent group-hover:text-black transition-colors">
+                            <i class="ri-upload-cloud-2-line text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">Klik untuk Upload Banyak Gambar</p>
+                            <p class="text-xs text-gray-500">Bisa pilih banyak file sekaligus</p>
+                        </div>
+                    </div>
+                    <!-- The Hidden Field (Manual HTML to avoid Django Widget Error) -->
+                    <input type="file" name="images" multiple class="hidden" id="bulk-image-upload">
+                 </div>
+
+                 <!-- Existing Images (FormSet) -->
+                 {{ image_formset.management_form }}
+                 <div class="grid grid-cols-2 gap-4">
+                    {% for form in image_formset %}
+                    <div class="bg-black/30 p-2 rounded-lg border border-gray-800 relative group overflow-hidden">
+                        {% if form.instance.pk %}
+                             <div class="aspect-square rounded-md overflow-hidden bg-gray-700 mb-2">
+                                <img src="{{ form.instance.image.url }}" class="w-full h-full object-cover">
+                             </div>
+                             <div class="absolute top-2 right-2 flex gap-1">
+                                 <label class="sr-only">Hapus</label>
+                                 {{ form.DELETE }}
+                             </div>
+                        {% else %}
+                             <!-- New inline form (rarely used given bulk upload, but kept for logic) -->
+                             <p class="text-xs text-gray-500 text-center py-4">Slot Gambar (Manual)</p>
+                             <div class="px-2">{{ form.image }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                 </div>
+            </div>
+        </div>
+
+        <!-- Variants -->
+        <div class="mt-8">
+            <h3 class="text-white font-bold mb-4 flex items-center gap-2 border-b border-brand-gray pb-2">
+                <i class="ri-t-shirt-line"></i> Varian Produk (Warna/Ukuran)
+            </h3>
+            {{ variant_formset.management_form }}
+            <div class="space-y-4" id="variant-formset-container">
+                {% for form in variant_formset %}
+                <div class="variant-form bg-white/5 p-4 rounded-xl flex gap-4 items-end border border-white/5">
+                    {% for field in form.visible_fields %}
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-400 block mb-1">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <!-- Delete checkbox hidden logic or explicit render -->
+                    {% if variant_formset.can_delete %}
+                        <div class="hidden">{{ form.DELETE }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-4 pt-6 border-t border-brand-gray">
+            <a href="{% url 'dashboard:product_manage' %}" class="px-6 py-2 rounded-lg border border-brand-gray text-gray-400 hover:text-white transition-colors">Batal</a>
+            <button type="submit" class="px-6 py-2 rounded-lg bg-white text-black font-bold hover:bg-gray-200 transition-colors">Simpan Produk</button>
+        </div>
+    </form>
+</div>
+
+<!-- Basic Script for styling file inputs if needed, future improvement: Dynamic add/remove js -->
+{% endblock %}

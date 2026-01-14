@@ -1,0 +1,69 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ order.id }}</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0 auto; color: #000; }
+        .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+        .header h1 { font-size: 16px; margin: 0; text-transform: uppercase; }
+        .header p { font-size: 12px; margin: 2px 0; }
+        .info { font-size: 12px; margin-bottom: 10px; }
+        .table { width: 100%; font-size: 12px; margin-bottom: 10px; border-collapse: collapse; }
+        .table th, .table td { text-align: left; padding: 2px 0; }
+        .table .price { text-align: right; }
+        .total-section { border-top: 1px dashed #000; padding-top: 5px; font-size: 12px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .footer { text-align: center; margin-top: 20px; font-size: 10px; }
+        @media print {
+            body { margin: 0; }
+            @page { margin: 0; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header">
+        <h1>NOTHING BRAIN</h1>
+        <p>Singkawang, Kalimantan Barat</p>
+        <p>www.nothingbrain.com</p>
+    </div>
+
+    <div class="info">
+        <div>Order #: <strong>{{ order.id }}</strong></div>
+        <div>Date: {{ order.created|date:"d/m/Y H:i" }}</div>
+        <div>Cust: {{ order.first_name }} {{ order.last_name }}</div>
+        <div>Pay: {{ order.payment_type|default:"Cash"|upper }}</div>
+    </div>
+
+    <table class="table">
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td colspan="3">{{ item.product.name }} ({{ item.variant.size }})</td>
+            </tr>
+            <tr>
+                <td>{{ item.quantity }} x {{ item.price|intcomma }}</td>
+                <td class="price">{{ item.get_cost|intcomma }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="row">
+            <span>Subtotal</span>
+            <span>{{ order.get_total_cost|intcomma }}</span>
+        </div>
+        <div class="row" style="font-weight: bold; font-size: 14px; margin-top: 5px;">
+            <span>TOTAL</span>
+            <span>{{ order.get_total_cost|intcomma }}</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>-- TERIMA KASIH --</p>
+        <p>Barang yang sudah dibeli tidak dapat ditukar/dikembalikan.</p>
+    </div>
+</body>
+</html>

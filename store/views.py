@@ -3,35 +3,33 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import *
-from .cart import Cart
-from .forms import *
-from .midtrans_service import create_snap_transaction
-from .services.email_service import *
-from .services.notification_service import send_payment_notification_to_admin # DIPERBARUI
-import json
-import hashlib
 from django.db import transaction
 from django.db.models import F
 from django.contrib.admin.views.decorators import staff_member_required
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.core.mail import send_mail
 
+import json
+import hashlib
 
+# Import Models & Forms
+from .models import * 
+from .cart import Cart
+from .forms import * # Import Services
+from .midtrans_service import create_snap_transaction
+from .services.email_service import * 
+from .services.notification_service import send_payment_notification_to_admin
 
-
-
-@login_required
-def order_detail_view(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
-    return render(request, 'store/auth/order_detail.html', {'order': order})
-
-def about_us_view(request):
-    content = AboutPageContent.objects.first()
-    return render(request, 'store/about_us.html', {'content': content})
+# ==============================================================================
+# 1. CORE & LANDING PAGE
+# ==============================================================================
 
 def landing_page_view(request):
-    featured_products = Product.objects.filter(available=True).order_by('-created')[:4]
+    # Optimasi: prefetch_related agar gambar varian tidak query berulang
+    featured_products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images').order_by('-created')[:4]
     content = LandingPageContent.objects.first()
     
     all_featured_collections = list(FeaturedCollection.objects.all()[:3])
@@ -49,33 +47,43 @@ def landing_page_view(request):
     }
     return render(request, 'store/landing_page.html', context)
 
-def product_list(request):
-    categories = Category.objects.all()
-    products = Product.objects.filter(available=True)
+def about_us_view(request):
+    content = AboutPageContent.objects.first()
+    return render(request, 'store/about_us.html', {'content': content})
 
-    # Ambil parameter dari URL (QUERYSTRING)
+
+# ==============================================================================
+# 2. PRODUK & KATALOG
+# ==============================================================================
+
+def product_list(request, category_slug=None): 
+    categories = Category.objects.all()
+    products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images')
+
+    # Ambil parameter search & sort dari URL Query (?search=...)
     search = request.GET.get("search", "")
     sort = request.GET.get("sort", "")
-    category_slug = request.GET.get("category")
+    
+    # Ambil category dari query string jika tidak ada di URL path
+    if not category_slug:
+        category_slug = request.GET.get("category")
 
     category = None
 
-    # ===== CATEGORY FILTER (PAKAI SLUG ADMIN) =====
+    # Filter Category
     if category_slug:
         category = get_object_or_404(Category, slug=category_slug)
         products = products.filter(category=category)
 
-    # ===== SEARCH =====
+    # Filter Search
     if search:
         products = products.filter(name__icontains=search)
 
-    # ===== SORT =====
+    # Sorting Logic
     if sort == "price_asc":
         products = products.order_by("price")
     elif sort == "price_desc":
         products = products.order_by("-price")
-    elif sort == "newest":
-        products = products.order_by("-created")
     elif sort == "oldest":
         products = products.order_by("created")
     else:
@@ -88,130 +96,121 @@ def product_list(request):
         "search": search,
         "sort": sort,
     }
-
     return render(request, "store/product_listing.html", context)
 
 def product_detail(request, id, slug):
     product = get_object_or_404(Product, id=id, slug=slug, available=True)
     variants = product.variants.order_by('color', 'size')
+    
     variants_data = {}
     for variant in variants:
-        if variant.color not in variants_data: variants_data[variant.color] = []
-        variants_data[variant.color].append({'id': variant.id, 'size': variant.size, 'stock': variant.stock})
+        if variant.color not in variants_data:
+            variants_data[variant.color] = []
+        
+        # Data untuk JavaScript di frontend
+        variants_data[variant.color].append({
+            'id': variant.id, 
+            'size': variant.size, 
+            'stock': variant.stock,
+            'price': float(product.price) 
+        })
+    
     cart_product_form = CartAddProductForm()
-    return render(request, 'store/product_detail.html', {'product': product, 'variants_data_json': json.dumps(variants_data), 'cart_product_form': cart_product_form})
+    
+    context = {
+        'product': product, 
+        'variants_data_json': json.dumps(variants_data), 
+        'cart_product_form': cart_product_form
+    }
+    return render(request, 'store/product_detail.html', context)
+
+def size_guide_view(request):
+    """
+    Mengembalikan potongan HTML Size Guide untuk modal pop-up
+    """
+    return render(request, 'store/partials/size_guide.html')
+
+# ==============================================================================
+# 3. HTMX UTILS (UNTUK FITUR INTERAKTIF TANPA RELOAD)
+# ==============================================================================
+
+def check_stock(request, product_id):
+    variant_id = request.GET.get('variant')
+    if variant_id:
+        variant = get_object_or_404(ProductVariant, id=variant_id)
+        stock = variant.stock
+        price = variant.price
+    else:
+        product = get_object_or_404(Product, id=product_id)
+        stock = 0
+        price = product.price
+
+    return render(request, 'store/partials/product_price_stock.html', {
+        'price': price,
+        'stock': stock
+    })
+
+def update_cart_badge(request):
+    cart = Cart(request)
+    return render(request, 'store/partials/cart_badge.html', {'cart_len': len(cart)})
+
+
+# ==============================================================================
+# 4. KERANJANG (CART)
+# ==============================================================================
+
+def cart_detail(request):
+    cart = Cart(request)
+    for item in cart:
+        item['update_quantity_form'] = CartAddProductForm(initial={
+            'quantity': item['quantity'], 
+            'override': True, 
+            'variant_id': item['variant'].id
+        })
+    return render(request, 'store/cart.html', {'cart': cart})
 
 @login_required(login_url='store:login')
 def cart_add(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
-    form = CartAddProductForm(request.POST)
 
-    if form.is_valid():
-        cd = form.cleaned_data
-        variant = get_object_or_404(ProductVariant, id=cd['variant_id'])
+    if request.method == 'POST':
+        variant_id = request.POST.get('variant_id')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        if variant_id:
+            variant_obj = get_object_or_404(ProductVariant, id=variant_id)
+            cart.add(product=product, quantity=quantity, variant=variant_obj)
+            messages.success(request, f"{product.name} ({variant_obj.size}) berhasil masuk keranjang!")
+        else:
+            cart.add(product=product, quantity=quantity)
+            messages.success(request, f"{product.name} berhasil masuk keranjang!")
 
-        if cd['quantity'] > variant.stock:
-            messages.error(request, f"Maaf, stok untuk ukuran {variant.size} hanya tersisa {variant.stock}.")
-            return redirect('store:product_detail', id=product.id, slug=product.slug)
-
-        cart.add(product=product, variant=variant, quantity=cd['quantity'], override_quantity=cd['override'])
-        messages.success(request, "Produk berhasil ditambahkan ke keranjang!")
-
-    return redirect('store:cart_detail')
+        return redirect('store:product_detail', id=product.id, slug=product.slug)
+        
+    return redirect('store:product_list')
 
 def cart_remove(request, product_id, variant_id):
-    cart = Cart(request); product = get_object_or_404(Product, id=product_id); variant = get_object_or_404(ProductVariant, id=variant_id)
-    cart.remove(variant); messages.info(request, "Produk telah dihapus dari keranjang.")
+    cart = Cart(request)
+    variant = get_object_or_404(ProductVariant, id=variant_id)
+    cart.remove(variant)
+    
+    if request.htmx:
+        return render(request, 'store/partials/cart_table.html', {'cart': cart})
+        
+    messages.info(request, "Item dihapus.")
     return redirect('store:cart_detail')
 
-def cart_detail(request):
-    cart = Cart(request)
-    for item in cart:
-        item['update_quantity_form'] = CartAddProductForm(initial={'quantity': item['quantity'], 'override': True, 'variant_id': item['variant'].id})
-    return render(request, 'store/cart.html', {'cart': cart})
 
-def register(request):
-    if request.user.is_authenticated: return redirect('store:landing_page')
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save(); login(request, user); return redirect('store:landing_page')
-    else: form = UserRegisterForm()
-    return render(request, 'store/auth/register.html', {'form': form})
-
-def custom_logout_view(request):
-    logout(request)
-    messages.success(request, "Anda telah berhasil logout.")
-    return redirect('store:landing_page')
-
-@login_required
-def account_dashboard(request):
-    orders = Order.objects.filter(user=request.user)
-    return render(request, 'store/auth/account_dashboard.html', {'orders': orders})
-
-@login_required
-def address_list_view(request):
-    addresses = Address.objects.filter(user=request.user)
-    form = AddressForm()
-    return render(request, 'store/auth/address_list.html', {'addresses': addresses, 'form': form})
-
-@login_required
-def address_add_view(request):
-    if request.method == 'POST':
-        form = AddressForm(request.POST)
-        if form.is_valid():
-            address = form.save(commit=False)
-            address.user = request.user
-            address.save()
-            messages.success(request, "Alamat baru berhasil ditambahkan.")
-    return redirect('store:address_list')
-
-@login_required
-def address_delete_view(request, address_id):
-    address = get_object_or_404(Address, id=address_id, user=request.user)
-    address.delete()
-    messages.info(request, "Alamat berhasil dihapus.")
-    return redirect('store:address_list')
-
-@login_required
-def address_set_default_view(request, address_id):
-    Address.objects.filter(user=request.user).update(is_default=False)
-    address = get_object_or_404(Address, id=address_id, user=request.user)
-    address.is_default = True
-    address.save()
-    messages.success(request, "Alamat utama berhasil diubah.")
-    return redirect('store:address_list')
-
-@login_required
-def account_details_view(request):
-    if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-        if u_form.is_valid() and p_form.is_valid():
-            u_form.save(); p_form.save()
-            messages.success(request, 'Profil Anda berhasil diperbarui.')
-            return redirect('store:account_details')
-    else:
-        u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileUpdateForm(instance=request.user.profile)
-    context = {'u_form': u_form, 'p_form': p_form}
-    return render(request, 'store/auth/account_details.html', context)
-
-@login_required
-def address_add_from_checkout_view(request):
-    if request.method == 'POST':
-        form = AddressForm(request.POST)
-        if form.is_valid():
-            address = form.save(commit=False)
-            address.user = request.user
-            address.save()
-            messages.success(request, "Alamat baru berhasil ditambahkan.")
-    return redirect('store:order_create')
-
+# ==============================================================================
+# 5. CHECKOUT & ORDER
+# ==============================================================================
 
 def order_create(request):
     cart = Cart(request)
+    if len(cart) == 0:
+        return redirect('store:product_list')
+
     if request.method == 'POST':
         form = OrderCreateForm(request.POST)
         if form.is_valid():
@@ -219,46 +218,75 @@ def order_create(request):
             if request.user.is_authenticated:
                 order.user = request.user
             
-            # Logika kupon dihapus
-            order.shipping_cost = 15000 # Contoh biaya pengiriman
+            # TODO: Integrasi RajaOngkir di sini untuk cost dinamis
+            order.shipping_cost = 15000 
             order.save()
             
             for item in cart:
-                OrderItem.objects.create(order=order, product=item['product'], variant=item['variant'], price=item['price'], quantity=item['quantity'])
+                OrderItem.objects.create(
+                    order=order, 
+                    product=item['product'], 
+                    variant=item['variant'], 
+                    price=item['price'], 
+                    quantity=item['quantity']
+                )
             
+            # Generate Midtrans Token
             snap_token = create_snap_transaction(order)
             if snap_token:
                 order.midtrans_snap_token = snap_token
                 order.save()
-                cart.clear()
+                cart.clear() 
                 return render(request, 'store/payment.html', {
                     'snap_token': snap_token,
                     'client_key': settings.MIDTRANS_CLIENT_KEY
                 })
             else:
-                messages.error(request, "Gagal membuat transaksi pembayaran. Silakan coba lagi.")
+                messages.error(request, "Gagal koneksi ke Payment Gateway.")
                 return redirect('store:order_create')
     else:
+        # Pre-fill form
         initial_data = {}
         if request.user.is_authenticated:
-            default_address = Address.objects.filter(user=request.user, is_default=True).first()
-            if default_address:
+            default_addr = Address.objects.filter(user=request.user, is_default=True).first()
+            if default_addr:
                 initial_data = {
-                    'first_name': default_address.full_name.split(' ')[0],
-                    'last_name': ' '.join(default_address.full_name.split(' ')[1:]),
+                    'first_name': default_addr.full_name.split(' ')[0],
+                    'last_name': ' '.join(default_addr.full_name.split(' ')[1:]),
                     'email': request.user.email,
-                    'address': default_address.address_line,
-                    'city': default_address.city,
-                    'postal_code': default_address.postal_code,
+                    'address': default_addr.address_line,
+                    'city': default_addr.city,
+                    'postal_code': default_addr.postal_code,
                 }
             else:
-                initial_data = {'email': request.user.email, 'first_name': request.user.first_name, 'last_name': request.user.last_name}
+                initial_data = {
+                    'email': request.user.email, 
+                    'first_name': request.user.first_name, 
+                    'last_name': request.user.last_name
+                }
         form = OrderCreateForm(initial=initial_data)
         
     saved_addresses = Address.objects.filter(user=request.user) if request.user.is_authenticated else None
     address_form = AddressForm()
-    return render(request, 'store/checkout.html', {'cart': cart, 'form': form, 'saved_addresses': saved_addresses, 'address_form': address_form})
+    
+    return render(request, 'store/checkout.html', {
+        'cart': cart, 
+        'form': form, 
+        'saved_addresses': saved_addresses, 
+        'address_form': address_form
+    })
 
+def order_confirmation(request):
+    order_id = request.session.get('order_id')
+    order = get_object_or_404(Order, id=order_id) if order_id else None
+    if 'order_id' in request.session: 
+        del request.session['order_id']
+    return render(request, 'store/order_confirmation.html', {'order': order})
+
+
+# ==============================================================================
+# 6. PEMBAYARAN (MIDTRANS)
+# ==============================================================================
 
 @login_required
 def retry_payment_view(request, order_id):
@@ -275,99 +303,204 @@ def retry_payment_view(request, order_id):
             'snap_token': snap_token,
             'client_key': settings.MIDTRANS_CLIENT_KEY
         })
-    else:
-        messages.error(request, "Gagal membuat transaksi pembayaran. Silakan coba lagi.")
-        return redirect('store:account_dashboard')
+    
+    messages.error(request, "Gagal memproses pembayaran ulang.")
+    return redirect('store:account_dashboard')
 
 @csrf_exempt
 def midtrans_webhook(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        midtrans_order_id = data.get('order_id')
-        transaction_status = data.get('transaction_status')
-        fraud_status = data.get('fraud_status')
-        signature_key = data.get('signature_key')
-        
-        server_key = settings.MIDTRANS_SERVER_KEY
-        input_string = midtrans_order_id + data.get('status_code') + data.get('gross_amount') + server_key
-        hashed_input = hashlib.sha512(input_string.encode()).hexdigest()
-
-        if hashed_input != signature_key:
-            return HttpResponse(status=403)
-
-        if midtrans_order_id.startswith('payment_notif_test'):
-            return HttpResponse(status=200)
-
         try:
+            data = json.loads(request.body)
+            midtrans_order_id = data.get('order_id')
+            transaction_status = data.get('transaction_status')
+            fraud_status = data.get('fraud_status')
+            signature_key = data.get('signature_key')
+            status_code = data.get('status_code')
+            gross_amount = data.get('gross_amount')
+            
+            # 1. Validasi Signature
+            server_key = settings.MIDTRANS_SERVER_KEY
+            input_string = f"{midtrans_order_id}{status_code}{gross_amount}{server_key}"
+            hashed_input = hashlib.sha512(input_string.encode()).hexdigest()
+
+            if hashed_input != signature_key:
+                return HttpResponse("Invalid Signature", status=403)
+
+            if midtrans_order_id.startswith('payment_notif_test'):
+                return HttpResponse(status=200)
+
+            # 2. Update Order
             original_order_id = int(midtrans_order_id.split('-')[0])
             order = Order.objects.get(id=original_order_id)
 
             if order.status == 'paid':
-                return HttpResponse(status=200)
+                return HttpResponse("Order already paid", status=200)
 
             if transaction_status == 'settlement' and fraud_status == 'accept':
                 with transaction.atomic():
                     order.status = 'paid'
                     order.save()
                     
+                    # Kurangi Stok
                     for item in order.items.all():
-                        item.variant.stock -= item.quantity
+                        item.variant.stock = F('stock') - item.quantity
                         item.variant.save()
+                        
+                        # Refresh DB untuk memicu alert jika stock < 5
+                        item.variant.refresh_from_db()
+                        from dashboard.utils.email_service import send_low_stock_email
+                        send_low_stock_email(item.variant)
                 
-                # Kirim email notifikasi ke admin menggunakan Django Mail
-                try:
-                    admin_users = User.objects.filter(is_staff=True)
-                    admin_emails = [user.email for user in admin_users if user.email]
-                    if not admin_emails:
-                        admin_emails = [settings.DEFAULT_ADMIN_EMAIL]
-                    
-                    subject_admin = f"Pembayaran Berhasil untuk Pesanan #{order.id}"
-                    html_message_admin = render_to_string('emails/admin_payment_notification.html', {'order': order})
-                    plain_message_admin = strip_tags(html_message_admin)
-                    send_mail(
-                        subject_admin, plain_message_admin, settings.EMAIL_HOST_USER, 
-                        admin_emails, html_message=html_message_admin
-                    )
-                except Exception as e:
-                    print(f"Gagal mengirim email notifikasi ke admin: {e}")
-
-                # Kirim invoice ke pelanggan
-                try:
-                    subject_customer = f"Invoice untuk Pesanan Anda #{order.id}"
-                    html_message_customer = render_to_string('emails/customer_invoice.html', {'order': order})
-                    plain_message_customer = strip_tags(html_message_customer)
-                    send_mail(subject_customer, plain_message_customer, settings.EMAIL_HOST_USER, [order.email], html_message=html_message_customer)
-                except Exception as e:
-                    print(f"Gagal mengirim invoice ke pelanggan: {e}")
+                # Kirim Email
+                _send_success_emails(order)
 
             elif transaction_status in ['cancel', 'deny', 'expire']:
                 order.status = 'failed'
                 order.save()
             
-            return HttpResponse(status=200)
+            return HttpResponse("OK", status=200)
         
-        except (Order.DoesNotExist, ValueError, IndexError) as e:
-            return HttpResponse(status=404)
+        except Order.DoesNotExist:
+            return HttpResponse("Order Not Found", status=404)
+        except Exception as e:
+            print(f"Webhook Error: {e}")
+            return HttpResponse("Error", status=400)
             
     return HttpResponse(status=400)
 
+def _send_success_emails(order):
+    try:
+        send_payment_notification_to_admin(order)
+    except Exception as e:
+        print(f"Gagal kirim email admin: {e}")
+
+    try:
+        subject = f"Invoice Pesanan #{order.id}"
+        html_msg = render_to_string('emails/customer_invoice.html', {'order': order})
+        plain_msg = strip_tags(html_msg)
+        send_mail(subject, plain_msg, settings.EMAIL_HOST_USER, [order.email], html_message=html_msg)
+    except Exception as e:
+        print(f"Gagal kirim invoice customer: {e}")
 
 
+# ==============================================================================
+# 7. AUTH & AKUN PENGGUNA (PERBAIKAN PATH TEMPLATE DI SINI)
+# ==============================================================================
 
-def order_confirmation(request):
-    order_id = request.session.get('order_id')
-    order = get_object_or_404(Order, id=order_id) if order_id else None
-    if 'order_id' in request.session: del request.session['order_id']
-    return render(request, 'store/order_confirmation.html', {'order': order})
+def register(request):
+    if request.user.is_authenticated:
+        return redirect('store:landing_page')
+        
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Selamat datang!")
+            return redirect('store:landing_page')
+    else:
+        form = UserRegisterForm()
+    # Mengarah ke folder auth
+    return render(request, 'store/auth/register.html', {'form': form})
 
+def custom_logout_view(request):
+    logout(request)
+    messages.success(request, "Anda telah logout.")
+    return redirect('store:landing_page')
+
+@login_required
+def account_dashboard(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created')
+    context = {
+        'orders': orders
+    }
+    # PERBAIKAN: Mengarah ke store/auth/account_dashboard.html
+    return render(request, 'store/auth/account_dashboard.html', context)
+
+@login_required
+def order_detail_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    # Mengarah ke folder auth
+    return render(request, 'store/auth/order_detail.html', {'order': order})
+
+@login_required
+def account_details_view(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, 'Profil diperbarui.')
+            return redirect('store:account_details')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+    
+    # Mengarah ke folder auth
+    return render(request, 'store/auth/account_details.html', {
+        'u_form': u_form, 
+        'p_form': p_form
+    })
+
+
+# ==============================================================================
+# 8. MANAJEMEN ALAMAT (CRUD)
+# ==============================================================================
+
+@login_required
+def address_list_view(request):
+    addresses = Address.objects.filter(user=request.user)
+    form = AddressForm()
+    # Mengarah ke folder auth
+    return render(request, 'store/auth/address_list.html', {'addresses': addresses, 'form': form})
+
+@login_required
+def address_add_view(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            messages.success(request, "Alamat ditambahkan.")
+    return redirect('store:address_list')
+
+@login_required
+def address_delete_view(request, address_id):
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    address.delete()
+    messages.info(request, "Alamat dihapus.")
+    return redirect('store:address_list')
+
+@login_required
+def address_set_default_view(request, address_id):
+    Address.objects.filter(user=request.user).update(is_default=False)
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    address.is_default = True
+    address.save()
+    messages.success(request, "Alamat utama diubah.")
+    return redirect('store:address_list')
+
+@login_required
+def address_add_from_checkout_view(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            messages.success(request, "Alamat berhasil ditambahkan.")
+    return redirect('store:order_create')
+
+
+# ==============================================================================
+# 9. ADMIN OFFLINE SALE
+# ==============================================================================
 
 @staff_member_required
 def offline_sale_view(request):
-    """
-    Page admin untuk mencatat penjualan OFFLINE
-    dan mengurangi stok dengan aman
-    """
-
     if request.method == "POST":
         variant_id = request.POST.get("variant_id")
         quantity = int(request.POST.get("quantity", 0))
@@ -377,29 +510,20 @@ def offline_sale_view(request):
 
         if quantity <= 0:
             messages.error(request, "Jumlah harus lebih dari 0")
-            return redirect("store:admin_offline_sale")
+            return redirect("store:offline_sale")
 
         try:
             with transaction.atomic():
-                variant = (
-                    ProductVariant.objects
-                    .select_for_update()
-                    .get(id=variant_id)
-                )
+                variant = ProductVariant.objects.select_for_update().get(id=variant_id)
 
                 if variant.stock < quantity:
-                    messages.error(
-                        request,
-                        f"Stok tidak cukup. Sisa: {variant.stock}"
-                    )
-                    return redirect("store:admin_offline_sale")
+                    messages.error(request, f"Stok tidak cukup. Sisa: {variant.stock}")
+                    return redirect("store:offline_sale")
 
-                # Kurangi stok (AMAN)
                 variant.stock = F("stock") - quantity
                 variant.save()
                 variant.refresh_from_db()
 
-                # Catat penjualan offline
                 OfflineSale.objects.create(
                     variant=variant,
                     quantity=quantity,
@@ -409,30 +533,17 @@ def offline_sale_view(request):
                     note=note,
                 )
 
-            messages.success(
-                request,
-                f"Penjualan berhasil. Sisa stok: {variant.stock}"
-            )
-            return redirect("store:admin_offline_sale")
+            messages.success(request, f"Penjualan berhasil. Sisa stok: {variant.stock}")
+            return redirect("store:offline_sale")
 
         except ProductVariant.DoesNotExist:
             messages.error(request, "Varian tidak ditemukan")
-            return redirect("store:admin_offline_sale")
+            return redirect("store:offline_sale")
 
-    # GET
-    variants = ProductVariant.objects.select_related(
-        "product"
-    ).order_by("product__name", "color", "size")
+    variants = ProductVariant.objects.select_related("product").order_by("product__name", "color", "size")
+    recent_sales = OfflineSale.objects.select_related("variant", "staff").order_by("-created_at")[:10]
 
-    recent_sales = OfflineSale.objects.select_related(
-        "variant", "staff"
-    ).order_by("-created_at")[:10]
-
-    return render(
-        request,
-        "admin/offline_sale.html",
-        {
-            "variants": variants,
-            "recent_sales": recent_sales,
-        }
-    )
+    return render(request, "store/admin/offline_sale.html", {
+        "variants": variants,
+        "recent_sales": recent_sales,
+    })

@@ -28,6 +28,7 @@ urlpatterns = [
     path('keranjang/hapus/<int:product_id>/<int:variant_id>/', views.cart_remove, name='cart_remove'),
     path('checkout/', views.order_create, name='order_create'),
     path('konfirmasi-pesanan/', views.order_confirmation, name='order_confirmation'),
+    path('size-guide/', views.size_guide_view, name='size_guide'),
     path(
         "offline-sale/",
         views.offline_sale_view,

@@ -1,69 +1,179 @@
 {% extends "store/base.html" %}
 {% load static %}
 
-{% block title %}Detail Akun{% endblock %}
+{% block title %}Account Settings | Nothing Brain{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-12">
-    <div class="text-center pb-12">
-        <h1 class="text-6xl font-display">Akun Saya</h1>
-    </div>
 
-    <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Menu Navigasi Samping -->
-        <aside class="w-full lg:w-1/4">
-            <div class="card bg-base-200 p-4 sticky top-24">
-                <div class="p-4 text-center border-b border-base-300">
-                    <div class="avatar online mb-2">
-                        <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                            <!-- DIPERBARUI: Menggunakan sintaks template yang benar -->
+<style>
+    /* Styling Form Django agar Sesuai Tema */
+    .form-group {
+        @apply mb-6;
+    }
+    .form-group label {
+        @apply block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"] {
+        @apply w-full bg-white border border-gray-300 px-4 py-3 rounded-none focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all text-sm font-medium;
+    }
+    .form-group small {
+        @apply text-[10px] text-gray-400 mt-1 block;
+    }
+    
+    /* Styling Khusus Input File */
+    .form-group input[type="file"] {
+        @apply file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800 text-sm text-gray-500 cursor-pointer;
+    }
+
+    /* Checkbox Help Text */
+    .helptext {
+        @apply text-[10px] text-gray-400 mt-1 block;
+    }
+</style>
+
+<div class="min-h-screen bg-white py-12">
+    <div class="container mx-auto px-4 md:px-8 max-w-7xl">
+        
+        <div class="mb-12 border-b border-black pb-6 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-display font-bold uppercase tracking-tighter text-black leading-none mb-2">
+                    Settings
+                </h1>
+                <p class="text-xs md:text-sm font-mono text-gray-500 tracking-widest uppercase">
+                    Update Profile Information
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
+            
+            <aside class="lg:col-span-1">
+                <div class="sticky top-28 space-y-8">
+                    
+                    <div class="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50/50">
+                        <div class="w-14 h-14 rounded-full overflow-hidden border border-gray-300 bg-white shrink-0">
                             {% if user.profile and user.profile.image %}
-                                <img src="{{ user.profile.image.url }}" />
+                                <img src="{{ user.profile.image.url }}" class="w-full h-full object-cover" alt="Profile">
                             {% else %}
-                                <img src="https://i.pravatar.cc/150?u={{ user.username }}" />
+                                <img src="https://ui-avatars.com/api/?name={{ user.first_name }}+{{ user.last_name }}&background=000&color=fff&size=128" class="w-full h-full object-cover" alt="Default">
                             {% endif %}
                         </div>
+                        <div class="overflow-hidden">
+                            <h3 class="font-bold text-sm uppercase tracking-wide truncate">{{ user.first_name }} {{ user.last_name }}</h3>
+                            <p class="text-[10px] text-gray-500 truncate font-mono">{{ user.email }}</p>
+                        </div>
                     </div>
-                    <h3 class="font-bold text-lg">{{ user.first_name }} {{ user.last_name }}</h3>
-                    <p class="text-sm text-base-content/60">{{ user.username }}</p>
-                </div>
-                <ul class="menu p-2">
-                    <li class="menu-title"><span>Menu Akun</span></li>
-                    <li><a href="{% url 'store:account_dashboard' %}"><i data-lucide="history" class="w-4 h-4 mr-2"></i> Riwayat Pesanan</a></li>
-                    <li><a href="{% url 'store:address_list' %}"><i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> Alamat Tersimpan</a></li>
-                    <li class="active"><a><i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> Detail Akun</a></li>
-                    <li>
-                        <form action="{% url 'store:logout' %}" method="post">
+
+                    <nav class="flex flex-col space-y-2">
+                        <a href="{% url 'store:account_dashboard' %}" class="nav-item flex items-center gap-3 px-4 py-3 border border-transparent rounded-lg transition-all duration-200 text-gray-500 hover:text-black">
+                            <i data-lucide="package" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold uppercase tracking-widest">Orders</span>
+                        </a>
+                        
+                        <a href="{% url 'store:address_list' %}" class="nav-item flex items-center gap-3 px-4 py-3 border border-transparent rounded-lg transition-all duration-200 text-gray-500 hover:text-black">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold uppercase tracking-widest">Addresses</span>
+                        </a>
+                        
+                        <a href="{% url 'store:account_details' %}" class="nav-item active flex items-center gap-3 px-4 py-3 bg-black text-white border border-black rounded-lg transition-all duration-200">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold uppercase tracking-widest">Settings</span>
+                        </a>
+
+                        <form action="{% url 'store:logout' %}" method="post" class="pt-4 mt-2 border-t border-dashed border-gray-200">
                             {% csrf_token %}
-                            <button type="submit" class="w-full text-left flex items-center">
-                                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Logout
+                            <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors group">
+                                <i data-lucide="log-out" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                                <span class="text-xs font-bold uppercase tracking-widest">Log Out</span>
                             </button>
                         </form>
-                    </li>
-                </ul>
-            </div>
-        </aside>
+                    </nav>
+                </div>
+            </aside>
+            
+            <main class="lg:col-span-3">
+                <div class="bg-white border border-gray-200 rounded-xl p-6 md:p-10 shadow-sm">
+                    
+                    <form method="POST" enctype="multipart/form-data" class="space-y-10">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <h2 class="font-display text-xl font-bold uppercase mb-6 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-black rounded-full"></span> Profile Picture
+                            </h2>
+                            <div class="flex flex-col md:flex-row items-center gap-8">
+                                <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-50 ring-4 ring-gray-50 shrink-0">
+                                    {% if user.profile.image %}
+                                        <img src="{{ user.profile.image.url }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center text-gray-300">
+                                            <i data-lucide="user" class="w-10 h-10"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="w-full">
+                                    <div class="form-group mb-0">
+                                        {{ p_form.image }} <p class="text-[10px] text-gray-400 mt-2">Format: JPG, PNG. Max size: 2MB.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-        <!-- Konten Utama Dasbor -->
-        <main class="w-full lg:w-3/4">
-            <div class="card bg-base-200 p-6">
-                <h2 class="text-3xl font-display mb-6">Detail Akun</h2>
-                <form method="POST" enctype="multipart/form-data" class="space-y-4">
-                    {% csrf_token %}
-                    <fieldset class="space-y-2">
-                        <legend class="font-bold text-lg mb-2">Info Pengguna</legend>
-                        {{ u_form.as_p }}
-                    </fieldset>
-                    <fieldset class="space-y-2">
-                        <legend class="font-bold text-lg mb-2">Foto Profil</legend>
-                        {{ p_form.as_p }}
-                    </fieldset>
-                    <div class="form-control mt-6">
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                    </div>
-                </form>
-            </div>
-        </main>
+                        <hr class="border-dashed border-gray-200">
+
+                        <div>
+                            <h2 class="font-display text-xl font-bold uppercase mb-6 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-black rounded-full"></span> Personal Info
+                            </h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-group">
+                                    <label for="{{ u_form.username.id_for_label }}">Username</label>
+                                    {{ u_form.username }}
+                                    {% if u_form.username.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ u_form.username.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ u_form.email.id_for_label }}">Email Address</label>
+                                    {{ u_form.email }}
+                                    {% if u_form.email.errors %}
+                                        <p class="text-red-500 text-xs mt-1">{{ u_form.email.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ u_form.first_name.id_for_label }}">First Name</label>
+                                    {{ u_form.first_name }}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ u_form.last_name.id_for_label }}">Last Name</label>
+                                    {{ u_form.last_name }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-gray-100 flex justify-end">
+                            <button type="submit" class="bg-black text-white px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-gray-800 transition-all rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1">
+                                Save Changes
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </main>
+        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Menambahkan class Tailwind ke input field Django yang dirender otomatis
+        const inputs = document.querySelectorAll('input[type="text"], input[type="email"]');
+        inputs.forEach(input => {
+            input.classList.add('w-full', 'bg-white', 'border', 'border-gray-300', 'px-4', 'py-3', 'rounded-none', 'focus:outline-none', 'focus:border-black', 'focus:ring-1', 'focus:ring-black', 'transition-all', 'text-sm', 'font-medium');
+        });
+    });
+</script>
+
 {% endblock %}
