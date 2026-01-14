@@ -98,14 +98,16 @@ def product_create(request):
                 variant_formset.save_m2m()
 
                 # 1. Handle Existing Formset Images (Edit/Delete)
-                images = image_formset.save(commit=False)
-                for image in images:
-                    image.product = product
-                    image.save()
-                image_formset.save_m2m()
+                if image_formset.is_valid():
+                    images = image_formset.save(commit=False)
+                    for image in images:
+                        image.product = product
+                        image.save()
+                    image_formset.save_m2m()
 
                 # 2. Handle Bulk Upload (New Images)
-                for file in request.FILES.getlist('images'):
+                # Rename input to 'bulk_images' to avoid conflict with formset prefix 'images'
+                for file in request.FILES.getlist('bulk_images'):
                     ProductImage.objects.create(product=product, image=file)
                 
                 return redirect('dashboard:product_manage')
@@ -131,14 +133,16 @@ def product_edit(request, product_id):
         variant_formset = VariantFormSet(request.POST, instance=product, prefix='variants')
         image_formset = ImageFormSet(request.POST, request.FILES, instance=product, prefix='images')
 
-        if form.is_valid() and variant_formset.is_valid() and image_formset.is_valid():
+        if form.is_valid() and variant_formset.is_valid():
             with transaction.atomic():
                 product = form.save() # Save main form
                 variant_formset.save()
-                image_formset.save()
+                
+                if image_formset.is_valid():
+                    image_formset.save()
                 
                 # Handle Bulk Upload (New Images)
-                for file in request.FILES.getlist('images'):
+                for file in request.FILES.getlist('bulk_images'):
                     ProductImage.objects.create(product=product, image=file)
 
                 return redirect('dashboard:product_manage')

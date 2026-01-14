@@ -9,27 +9,33 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            black: '#0a0a0a',
-                            dark: '#1a1a1a',
-                            gray: '#2a2a2a',
-                            accent: '#ffffff', // Minimalist White accent
+    <!-- Tailwind CSS Logic -->
+    {% if USE_TAILWIND_CDN %}
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Outfit', 'sans-serif'],
+                        },
+                        colors: {
+                            brand: {
+                                black: '#0a0a0a',
+                                dark: '#1a1a1a',
+                                gray: '#2a2a2a',
+                                accent: '#ffffff',
+                            }
                         }
                     }
                 }
             }
-        }
-    </script>
+        </script>
+    {% else %}
+        <!-- Local Build (Future Proofing) -->
+        <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    {% endif %}
+
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
     <!-- Alpine.js -->
@@ -52,8 +58,8 @@
 <body class="font-sans antialiased h-screen flex overflow-hidden lg:flex-row" x-data="{ sidebarOpen: false }">
 
     <!-- Sidebar -->
-    <!-- Mobile: Fixed, Hidden by default. Desktop: Static (In Flow), Always visible -->
-    <aside class="fixed inset-y-0 left-0 z-50 bg-brand-black border-r border-brand-gray w-72 transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-xl lg:static lg:translate-x-0"
+    <!-- Mobile: Fixed, Hidden by default (translate-x-full). Desktop: Static, Visible. -->
+    <aside class="fixed inset-y-0 left-0 z-50 bg-brand-black border-r border-brand-gray w-72 transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-xl lg:static lg:translate-x-0"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
         
         <!-- Logo -->
