@@ -14,3 +14,6 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nothing_brain_project.settings')
 
 application = get_wsgi_application()
+
+# Vercel requires the variable to be named 'app'
+app = application
