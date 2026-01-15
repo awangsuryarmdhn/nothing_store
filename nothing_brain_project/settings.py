@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://*.ngrok-free.dev",
     "https://nothingbrain.store",
+    "https://*.vercel.app",
 ]
 if config('NGROK_HOSTNAME', default=''):
     CSRF_TRUSTED_ORIGINS.append(f"https://{config('NGROK_HOSTNAME')}")

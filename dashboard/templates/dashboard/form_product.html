@@ -7,6 +7,37 @@
 <div class="glass-panel p-8 rounded-2xl max-w-4xl mx-auto">
     <form method="post" enctype="multipart/form-data" class="space-y-8">
         {% csrf_token %}
+
+        <!-- Error Summary -->
+        {% if form.errors or variant_formset.errors or image_formset.errors %}
+        <div class="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl">
+            <h4 class="font-bold mb-2">Gagal Menyimpan Produk:</h4>
+            <ul class="list-disc list-inside text-sm">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in variant_formset.non_form_errors %}
+                    <li>Variant Set: {{ error }}</li>
+                {% endfor %}
+                {% for subform in variant_formset %}
+                    {% for error in subform.errors.values %}
+                        <li>Variant: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in image_formset.errors %}
+                    <!-- Image formset errors usually return a list of dicts -->
+                    {% for k,v in error.items %}
+                        <li>Image: {{ v }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
         
         <!-- Product Main Info -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
