@@ -248,8 +248,12 @@ class Order(models.Model):
     def __str__(self):
         return f'Pesanan #{self.id} - {self.first_name} ({self.channel})'
 
+    def get_subtotal(self):
+        """Get sum of all item costs before discount and shipping"""
+        return sum(item.get_cost() for item in self.items.all())
+
     def get_total_cost(self):
-        subtotal = sum(item.get_cost() for item in self.items.all())
+        subtotal = self.get_subtotal()
         # Apply discount percentage
         if self.discount and self.discount > 0:
             discount_amount = subtotal * self.discount / 100
