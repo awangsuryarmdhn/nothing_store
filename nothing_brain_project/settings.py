@@ -164,10 +164,6 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Konfigurasi Whitenoise untuk kompresi dan caching aset
-if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 # Tailwind Config
 # Set True untuk menggunakan CDN (Aman untuk Vercel jika NPM gagal)
 # Set False jika menggunakan local build 'static/css/output.css'
@@ -194,12 +190,13 @@ if config('SUPABASE_ACCESS_KEY_ID', default=None):
             'CacheControl': 'max-age=86400',
         }
 
+    # PERBAIKAN: Gunakan WhiteNoise untuk staticfiles agar admin CSS berfungsi
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
     
@@ -210,6 +207,17 @@ else:
     # Fallback ke penyimpanan lokal jika tidak ada config Supabase
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    
+    # WhiteNoise untuk production tanpa Supabase
+    if not DEBUG:
+        STORAGES = {
+            "default": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            },
+        }
 
 
 # ==============================================================================

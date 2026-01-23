@@ -133,7 +133,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/chart.min.js' %}"></script>
+<!-- Chart.js via CDN (more reliable than local file) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof Chart === 'undefined') {
