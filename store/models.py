@@ -250,6 +250,10 @@ class Order(models.Model):
 
     def get_total_cost(self):
         subtotal = sum(item.get_cost() for item in self.items.all())
+        # Apply discount percentage
+        if self.discount and self.discount > 0:
+            discount_amount = subtotal * self.discount / 100
+            subtotal = subtotal - discount_amount
         return subtotal + self.shipping_cost
 
 

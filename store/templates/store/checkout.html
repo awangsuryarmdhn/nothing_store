@@ -211,10 +211,28 @@
                         {% endfor %}
                     </div>
 
+                    <!-- COUPON INPUT -->
+                    <div class="py-4 border-t border-gray-100">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 block">Kode Kupon</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="coupon-input" placeholder="Masukkan kode kupon" 
+                                   class="flex-1 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-black transition-colors uppercase">
+                            <button type="button" id="apply-coupon-btn" 
+                                    class="bg-black text-white px-5 py-3 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors">
+                                Apply
+                            </button>
+                        </div>
+                        <p id="coupon-message" class="text-xs mt-2 hidden"></p>
+                    </div>
+
                     <div class="space-y-3 py-6 border-t border-gray-100 bg-gray-50/50 -mx-6 md:-mx-8 px-6 md:px-8">
                         <div class="flex justify-between text-sm text-gray-600">
                             <span>Subtotal</span>
-                            <span class="font-medium text-black">Rp {{ cart.get_total_price|intcomma }}</span>
+                            <span class="font-medium text-black" id="subtotal-display">Rp {{ cart.get_total_price|intcomma }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600" id="discount-row" style="display: none;">
+                            <span>Diskon (<span id="discount-percent">0</span>%)</span>
+                            <span class="font-medium text-green-600" id="discount-display">- Rp 0</span>
                         </div>
                         <div class="flex justify-between text-sm text-gray-600">
                             <span>Shipping</span>
@@ -225,7 +243,7 @@
                         
                         <div class="flex justify-between items-center">
                             <span class="font-display font-bold text-xl uppercase">Total</span>
-                            <span class="font-display font-bold text-xl uppercase">Rp {{ cart.get_total_price|add:15000|intcomma }}</span>
+                            <span class="font-display font-bold text-xl uppercase" id="total-display">Rp {{ cart.get_total_price|add:15000|intcomma }}</span>
                         </div>
                     </div>
                 </div>
@@ -326,6 +344,65 @@ document.addEventListener('DOMContentLoaded', function() {
             // document.getElementById('checkout-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
+
+    // COUPON AJAX FUNCTIONALITY
+    const couponInput = document.getElementById('coupon-input');
+    const applyCouponBtn = document.getElementById('apply-coupon-btn');
+    const couponMessage = document.getElementById('coupon-message');
+    const discountRow = document.getElementById('discount-row');
+    const discountPercent = document.getElementById('discount-percent');
+    const discountDisplay = document.getElementById('discount-display');
+    const totalDisplay = document.getElementById('total-display');
+
+    applyCouponBtn.addEventListener('click', function() {
+        const code = couponInput.value.trim();
+        
+        if (!code) {
+            showMessage('Masukkan kode kupon', false);
+            return;
+        }
+
+        applyCouponBtn.disabled = true;
+        applyCouponBtn.textContent = '...';
+
+        fetch('{% url "store:apply_coupon" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'coupon_code=' + encodeURIComponent(code)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showMessage(data.message, data.success);
+            
+            if (data.success) {
+                discountRow.style.display = 'flex';
+                discountPercent.textContent = data.discount_percent;
+                discountDisplay.textContent = '- Rp ' + data.discount_amount.toLocaleString('id-ID');
+                totalDisplay.textContent = 'Rp ' + data.new_total.toLocaleString('id-ID');
+                couponInput.disabled = true;
+                applyCouponBtn.textContent = '✓';
+                applyCouponBtn.classList.remove('bg-black', 'hover:bg-gray-800');
+                applyCouponBtn.classList.add('bg-green-600');
+            } else {
+                applyCouponBtn.disabled = false;
+                applyCouponBtn.textContent = 'Apply';
+            }
+        })
+        .catch(err => {
+            showMessage('Terjadi kesalahan', false);
+            applyCouponBtn.disabled = false;
+            applyCouponBtn.textContent = 'Apply';
+        });
+    });
+
+    function showMessage(msg, success) {
+        couponMessage.textContent = msg;
+        couponMessage.classList.remove('hidden', 'text-green-600', 'text-red-500');
+        couponMessage.classList.add(success ? 'text-green-600' : 'text-red-500');
+    }
 });
 </script>
 

@@ -218,9 +218,18 @@ def order_create(request):
             if request.user.is_authenticated:
                 order.user = request.user
             
+            # Ambil diskon dari session (jika ada kupon)
+            discount_percent = request.session.get('discount_percent', 0)
+            order.discount = discount_percent
+            
             # TODO: Integrasi RajaOngkir di sini untuk cost dinamis
             order.shipping_cost = 15000 
             order.save()
+            
+            # Clear coupon session setelah order dibuat
+            request.session.pop('coupon_id', None)
+            request.session.pop('coupon_code', None)
+            request.session.pop('discount_percent', None)
             
             for item in cart:
                 OrderItem.objects.create(
@@ -275,6 +284,54 @@ def order_create(request):
         'saved_addresses': saved_addresses, 
         'address_form': address_form
     })
+
+def apply_coupon(request):
+    """AJAX endpoint untuk validasi dan apply kupon"""
+    if request.method == 'POST':
+        code = request.POST.get('coupon_code', '').strip().upper()
+        cart = Cart(request)
+        subtotal = cart.get_total_price()
+        
+        if not code:
+            return JsonResponse({'success': False, 'message': 'Masukkan kode kupon'})
+        
+        try:
+            from django.utils import timezone
+            now = timezone.now()
+            coupon = Coupon.objects.get(
+                code__iexact=code,
+                active=True,
+                valid_from__lte=now,
+                valid_to__gte=now
+            )
+            
+            # Hitung diskon
+            discount_percent = coupon.discount
+            discount_amount = int(subtotal * discount_percent / 100)
+            new_total = subtotal - discount_amount + 15000  # + shipping
+            
+            # Simpan kupon di session
+            request.session['coupon_id'] = coupon.id
+            request.session['coupon_code'] = coupon.code
+            request.session['discount_percent'] = discount_percent
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Kupon {coupon.code} berhasil diterapkan!',
+                'discount_percent': discount_percent,
+                'discount_amount': discount_amount,
+                'new_total': new_total
+            })
+            
+        except Coupon.DoesNotExist:
+            # Hapus kupon dari session jika tidak valid
+            request.session.pop('coupon_id', None)
+            request.session.pop('coupon_code', None)
+            request.session.pop('discount_percent', None)
+            return JsonResponse({'success': False, 'message': 'Kode kupon tidak valid atau sudah kadaluarsa'})
+    
+    return JsonResponse({'success': False, 'message': 'Method not allowed'}, status=405)
+
 
 def order_confirmation(request):
     order_id = request.session.get('order_id')
