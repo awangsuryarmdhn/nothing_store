@@ -4,62 +4,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Pesanan #{{ order.id }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; }
-        .header { text-align: center; border-bottom: 1px solid #eeeeee; padding-bottom: 20px; }
-        .header h1 { font-family: 'Archivo Black', sans-serif; text-transform: uppercase; font-size: 24px; margin: 0; }
-        .content { padding: 20px 0; }
-        .content h2 { font-size: 18px; margin-top: 0; }
-        .item-table { width: 100%; border-collapse: collapse; }
-        .item-table th, .item-table td { text-align: left; padding: 10px; border-bottom: 1px solid #eeeeee; }
-        .item-table th { color: #888888; font-size: 12px; text-transform: uppercase; }
-        .total-row { font-weight: bold; }
-        .footer { text-align: center; padding-top: 20px; border-top: 1px solid #eeeeee; font-size: 12px; color: #888888; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>NOTHING_BRAIN</h1>
-            <p>Terima kasih atas pesanan Anda!</p>
-        </div>
-        <div class="content">
-            <h2>Hai {{ order.first_name }},</h2>
-            <p>Pembayaran Anda telah kami terima. Kami sedang menyiapkan pesanan Anda dengan nomor <strong>#{{ order.id }}</strong> untuk segera dikirim.</p>
-            <h3>Ringkasan Pesanan</h3>
-            <table class="item-table">
-                <thead>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; -webkit-font-smoothing: antialiased;">
+    
+    <!-- Main Container -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header -->
                     <tr>
-                        <th>Produk</th>
-                        <th>Jumlah</th>
-                        <th style="text-align: right;">Harga</th>
+                        <td style="background-color: #000000; padding: 32px 40px; text-align: center;">
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 3px;">NOTHING_BRAIN</h1>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for item in order.items.all %}
+                    
+                    <!-- Success Badge -->
                     <tr>
-                        <td>{{ item.product.name }} ({{ item.variant.color }} / {{ item.variant.size }})</td>
-                        <td>{{ item.quantity }}</td>
-                        <td style="text-align: right;">Rp {{ item.get_cost|floatformat:0 }}</td>
+                        <td style="padding: 40px 40px 20px 40px; text-align: center;">
+                            <div style="display: inline-block; background-color: #d4edda; color: #155724; padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 600;">
+                                ✓ Pembayaran Berhasil
+                            </div>
+                        </td>
                     </tr>
-                    {% endfor %}
-                    <tr class="total-row">
-                        <td colspan="2">Total</td>
-                        <td style="text-align: right;">Rp {{ order.get_total_cost|floatformat:0 }}</td>
+                    
+                    <!-- Greeting -->
+                    <tr>
+                        <td style="padding: 20px 40px 30px 40px;">
+                            <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 600; color: #1a1a1a;">Hai {{ order.first_name }},</h2>
+                            <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #666666;">
+                                Terima kasih atas pesanan Anda! Pembayaran telah kami terima dan pesanan <strong>#{{ order.id }}</strong> sedang dalam proses pengiriman.
+                            </p>
+                        </td>
                     </tr>
-                </tbody>
-            </table>
-            <h3>Alamat Pengiriman</h3>
-            <p>
-                {{ order.first_name }} {{ order.last_name }}<br>
-                {{ order.address }}<br>
-                {{ order.city }}, {{ order.postal_code }}
-            </p>
-        </div>
-        <div class="footer">
-            <p>&copy; {% now "Y" %} NOTHING_BRAIN. All rights reserved.</p>
-        </div>
-    </div>
+                    
+                    <!-- Order Details Box -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fafafa; border-radius: 12px; border: 1px solid #eeeeee;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding-bottom: 16px; border-bottom: 1px dashed #e0e0e0;">
+                                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999999;">Order ID</span>
+                                                    <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: 700; color: #1a1a1a;">#{{ order.id }}</p>
+                                                </td>
+                                                <td style="padding-bottom: 16px; border-bottom: 1px dashed #e0e0e0; text-align: right;">
+                                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999999;">Tanggal</span>
+                                                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #1a1a1a;">{{ order.created|date:"d M Y" }}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <!-- Items -->
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
+                                            <tr>
+                                                <td colspan="3" style="padding-bottom: 12px;">
+                                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999999;">Produk</span>
+                                                </td>
+                                            </tr>
+                                            {% for item in order.items.all %}
+                                            <tr>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee;">
+                                                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #1a1a1a;">{{ item.product.name }}</p>
+                                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #888888;">{{ item.variant.color }} / {{ item.variant.size }}</p>
+                                                </td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee; text-align: center; width: 60px;">
+                                                    <span style="font-size: 13px; color: #666666;">×{{ item.quantity }}</span>
+                                                </td>
+                                                <td style="padding: 10px 0; border-bottom: 1px solid #eeeeee; text-align: right;">
+                                                    <span style="font-size: 14px; font-weight: 600; color: #1a1a1a;">Rp {{ item.get_cost|floatformat:0 }}</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                        
+                                        <!-- Totals -->
+                                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 16px;">
+                                            {% if order.discount and order.discount > 0 %}
+                                            <tr>
+                                                <td style="padding: 6px 0; font-size: 13px; color: #22c55e;">Diskon ({{ order.discount }}%)</td>
+                                                <td style="padding: 6px 0; font-size: 13px; color: #22c55e; text-align: right;">-{{ order.discount }}%</td>
+                                            </tr>
+                                            {% endif %}
+                                            <tr>
+                                                <td style="padding: 6px 0; font-size: 13px; color: #666666;">Ongkir ({{ order.shipping_option }})</td>
+                                                <td style="padding: 6px 0; font-size: 13px; color: #1a1a1a; text-align: right;">Rp {{ order.shipping_cost|floatformat:0 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="padding-top: 12px; border-top: 2px solid #1a1a1a;"></td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0; font-size: 16px; font-weight: 700; color: #1a1a1a;">TOTAL</td>
+                                                <td style="padding: 4px 0; font-size: 18px; font-weight: 700; color: #1a1a1a; text-align: right;">Rp {{ order.get_total_cost|floatformat:0 }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Shipping Address -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <p style="margin: 0 0 12px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999999;">Alamat Pengiriman</p>
+                            <div style="background-color: #fafafa; border-radius: 12px; padding: 20px; border: 1px solid #eeeeee;">
+                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #1a1a1a;">{{ order.first_name }} {{ order.last_name }}</p>
+                                <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.5; color: #666666;">
+                                    {{ order.address }}<br>
+                                    {{ order.city }}, {{ order.postal_code }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- CTA Button -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px; text-align: center;">
+                            <a href="https://www.nothingbrain.store/akun/" style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                                Cek Status Pesanan
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #fafafa; padding: 30px 40px; text-align: center; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; color: #888888;">
+                                Ada pertanyaan? Balas email ini atau hubungi kami.
+                            </p>
+                            <p style="margin: 0; font-size: 11px; color: #bbbbbb;">
+                                &copy; {% now "Y" %} NOTHING_BRAIN. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+    
 </body>
 </html>

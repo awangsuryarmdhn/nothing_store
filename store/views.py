@@ -247,6 +247,7 @@ def order_create(request):
                 order.save()
                 cart.clear() 
                 return render(request, 'store/payment.html', {
+                    'order': order,
                     'snap_token': snap_token,
                     'client_key': settings.MIDTRANS_CLIENT_KEY
                 })
@@ -357,6 +358,7 @@ def retry_payment_view(request, order_id):
         order.midtrans_snap_token = snap_token
         order.save()
         return render(request, 'store/payment.html', {
+            'order': order,
             'snap_token': snap_token,
             'client_key': settings.MIDTRANS_CLIENT_KEY
         })
