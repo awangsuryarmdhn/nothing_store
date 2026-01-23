@@ -44,5 +44,5 @@ VariantFormSet = inlineformset_factory(
 
 ImageFormSet = inlineformset_factory(
     Product, ProductImage, form=ProductImageForm,
-    extra=1, can_delete=True
+    extra=0, can_delete=True  # No empty slots - use bulk upload only
 )

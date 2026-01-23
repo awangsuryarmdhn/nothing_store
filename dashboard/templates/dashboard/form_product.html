@@ -9,7 +9,7 @@
         {% csrf_token %}
 
         <!-- Error Summary -->
-        {% if form.errors or variant_formset.errors or image_formset.errors %}
+        {% if form.errors or variant_formset.errors %}
         <div class="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl">
             <h4 class="font-bold mb-2">Gagal Menyimpan Produk:</h4>
             <ul class="list-disc list-inside text-sm">
@@ -60,7 +60,7 @@
                 </div>
             </div>
 
-            <!-- Right Side: Images & Bulk Upload -->
+            <!-- Right Side: Images Bulk Upload Only -->
             <div class="space-y-6">
                  <h3 class="text-white font-bold mb-4 flex items-center gap-2"><i class="ri-image-line"></i> Galeri Produk</h3>
                  
@@ -73,35 +73,40 @@
                             <i class="ri-upload-cloud-2-line text-2xl"></i>
                         </div>
                         <div>
-                            <p class="text-white font-medium">Klik untuk Upload Banyak Gambar</p>
-                            <p class="text-xs text-gray-500">Bisa pilih banyak file sekaligus</p>
+                            <p class="text-white font-medium">Klik untuk Upload Gambar</p>
+                            <p class="text-xs text-gray-500">Bisa pilih banyak file sekaligus (JPG, PNG, WebP)</p>
                         </div>
                     </div>
-                    <!-- The Hidden Field (Manual HTML to avoid Django Widget Error) -->
-                    <input type="file" name="bulk_images" multiple class="hidden" id="bulk-image-upload">
+                    <input type="file" name="bulk_images" multiple accept="image/*" class="hidden" id="bulk-image-upload" onchange="previewImages(this)">
                  </div>
 
-                 <!-- Existing Images (FormSet) -->
-                 {{ image_formset.management_form }}
-                 <div class="grid grid-cols-2 gap-4">
-                    {% for form in image_formset %}
-                    <div class="bg-black/30 p-2 rounded-lg border border-gray-800 relative group overflow-hidden">
-                        {% if form.instance.pk %}
-                             <div class="aspect-square rounded-md overflow-hidden bg-gray-700 mb-2">
-                                <img src="{{ form.instance.image.url }}" class="w-full h-full object-cover">
-                             </div>
-                             <div class="absolute top-2 right-2 flex gap-1">
-                                 <label class="sr-only">Hapus</label>
-                                 {{ form.DELETE }}
-                             </div>
-                        {% else %}
-                             <!-- New inline form (rarely used given bulk upload, but kept for logic) -->
-                             <p class="text-xs text-gray-500 text-center py-4">Slot Gambar (Manual)</p>
-                             <div class="px-2">{{ form.image }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+                 <!-- Preview New Images -->
+                 <div id="image-preview" class="grid grid-cols-3 gap-3 hidden">
                  </div>
+
+                 <!-- Existing Images (View Only, Delete via checkbox) -->
+                 {% if image_formset.forms %}
+                 {{ image_formset.management_form }}
+                 <div class="mt-4">
+                     <p class="text-xs text-gray-500 mb-2">Gambar yang sudah ada (centang untuk hapus):</p>
+                     <div class="grid grid-cols-3 gap-3">
+                        {% for form in image_formset %}
+                            {% if form.instance.pk %}
+                            <div class="relative group">
+                                <div class="aspect-square rounded-lg overflow-hidden bg-gray-700 border border-gray-600">
+                                    <img src="{{ form.instance.image.url }}" class="w-full h-full object-cover">
+                                </div>
+                                <label class="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded cursor-pointer hover:bg-red-600 transition-colors" title="Hapus">
+                                    {{ form.DELETE }}
+                                    <i class="ri-delete-bin-line text-xs"></i>
+                                </label>
+                                {{ form.id }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                     </div>
+                 </div>
+                 {% endif %}
             </div>
         </div>
 
@@ -139,5 +144,29 @@
     </form>
 </div>
 
-<!-- Basic Script for styling file inputs if needed, future improvement: Dynamic add/remove js -->
+<!-- Script for Image Preview -->
+<script>
+function previewImages(input) {
+    const preview = document.getElementById('image-preview');
+    preview.innerHTML = '';
+    
+    if (input.files && input.files.length > 0) {
+        preview.classList.remove('hidden');
+        
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'aspect-square rounded-lg overflow-hidden bg-gray-700 border-2 border-green-500/50';
+                div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover"><span class="absolute bottom-0 left-0 right-0 bg-green-500/90 text-white text-xs py-1 text-center">New</span>`;
+                div.style.position = 'relative';
+                preview.appendChild(div);
+            }
+            reader.readAsDataURL(file);
+        });
+    } else {
+        preview.classList.add('hidden');
+    }
+}
+</script>
 {% endblock %}
