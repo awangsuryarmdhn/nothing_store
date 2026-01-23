@@ -23,7 +23,7 @@ class ProductVariantForm(forms.ModelForm):
         fields = ['color', 'size', 'stock', 'price']
         widgets = {
             'color': forms.TextInput(attrs={'class': 'w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm', 'placeholder': 'Warna'}),
-            'size': forms.TextInput(attrs={'class': 'w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm', 'placeholder': 'Ukuran'}),
+            'size': forms.Select(attrs={'class': 'w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm'}),
             'stock': forms.NumberInput(attrs={'class': 'w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm', 'placeholder': '0'}),
             'price': forms.NumberInput(attrs={'class': 'w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm', 'placeholder': 'Opsional (Override)'}),
         }
