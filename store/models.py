@@ -229,6 +229,7 @@ class Order(models.Model):
     city = models.CharField("Kota", max_length=100)
     shipping_option = models.CharField("Opsi Pengiriman", max_length=50, default="Jasa Kirim Toko")
     shipping_cost = models.DecimalField("Biaya Pengiriman", max_digits=10, decimal_places=0, default=15000)
+    discount = models.IntegerField("Diskon (%)", default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     created = models.DateTimeField("Dibuat", auto_now_add=True)
     updated = models.DateTimeField("Diperbarui", auto_now=True)
