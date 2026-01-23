@@ -98,9 +98,14 @@
 
         <!-- Variants -->
         <div class="mt-8">
-            <h3 class="text-white font-bold mb-4 flex items-center gap-2 border-b border-brand-gray pb-2">
-                <i class="ri-t-shirt-line"></i> Varian Produk (Warna/Ukuran)
-            </h3>
+            <div class="flex items-center justify-between border-b border-brand-gray pb-2 mb-4">
+                <h3 class="text-white font-bold flex items-center gap-2">
+                    <i class="ri-t-shirt-line"></i> Varian Produk (Warna/Ukuran)
+                </h3>
+                <button type="button" onclick="addVariant()" class="text-sm bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg transition-colors flex items-center gap-1">
+                    <i class="ri-add-line"></i> Tambah Varian
+                </button>
+            </div>
             {{ variant_formset.management_form }}
             <div class="space-y-4" id="variant-formset-container">
                 {% for form in variant_formset %}
@@ -111,11 +116,19 @@
                             {{ field }}
                         </div>
                     {% endfor %}
-                    <!-- Delete checkbox hidden logic or explicit render -->
-                    {% if variant_formset.can_delete %}
-                        <div class="hidden">{{ form.DELETE }}</div>
-                    {% endif %}
+                    <!-- Delete button -->
+                    <div class="flex items-center gap-2">
+                        {{ form.id }}
+                        {% if variant_formset.can_delete %}
+                        <label class="text-red-400 hover:text-red-300 cursor-pointer p-2" title="Hapus varian ini">
+                            {{ form.DELETE }}
+                            <i class="ri-delete-bin-line"></i>
+                        </label>
+                        {% endif %}
+                    </div>
                 </div>
+                {% empty %}
+                <p class="text-gray-500 text-sm text-center py-4" id="no-variants-msg">Belum ada varian. Klik "Tambah Varian" untuk menambahkan.</p>
                 {% endfor %}
             </div>
         </div>
@@ -130,8 +143,41 @@
     </form>
 </div>
 
-<!-- Script for Image Preview -->
+<!-- Scripts -->
 <script>
+// ========================================
+// Auto Slug Generator
+// ========================================
+function slugify(text) {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with -
+        .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+        .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+        .replace(/^-+/, '')             // Trim - from start
+        .replace(/-+$/, '');            // Trim - from end
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('product-name') || document.getElementById('id_name');
+    const slugInput = document.getElementById('product-slug') || document.getElementById('id_slug');
+    
+    if (nameInput && slugInput) {
+        // Only auto-generate if slug is empty or matches previous auto-slug
+        let previousSlug = '';
+        nameInput.addEventListener('input', function() {
+            const newSlug = slugify(this.value);
+            // Only update if slug was empty or was auto-generated
+            if (slugInput.value === '' || slugInput.value === previousSlug) {
+                slugInput.value = newSlug;
+            }
+            previousSlug = newSlug;
+        });
+    }
+});
+
+// ========================================
+// Image Preview
+// ========================================
 function previewImages(input) {
     const preview = document.getElementById('image-preview');
     preview.innerHTML = '';
@@ -143,9 +189,8 @@ function previewImages(input) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const div = document.createElement('div');
-                div.className = 'aspect-square rounded-lg overflow-hidden bg-gray-700 border-2 border-green-500/50';
+                div.className = 'aspect-square rounded-lg overflow-hidden bg-gray-700 border-2 border-green-500/50 relative';
                 div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover"><span class="absolute bottom-0 left-0 right-0 bg-green-500/90 text-white text-xs py-1 text-center">New</span>`;
-                div.style.position = 'relative';
                 preview.appendChild(div);
             }
             reader.readAsDataURL(file);
@@ -154,5 +199,69 @@ function previewImages(input) {
         preview.classList.add('hidden');
     }
 }
+
+// ========================================
+// Dynamic Add Variant
+// ========================================
+function addVariant() {
+    const container = document.getElementById('variant-formset-container');
+    const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
+    const formNum = parseInt(totalForms.value);
+    
+    // Remove "no variants" message if present
+    const noMsg = document.getElementById('no-variants-msg');
+    if (noMsg) noMsg.remove();
+    
+    // Clone the last form or create new HTML
+    const newForm = document.createElement('div');
+    newForm.className = 'variant-form bg-white/5 p-4 rounded-xl flex gap-4 items-end border border-white/5 border-green-500/30';
+    newForm.innerHTML = `
+        <div class="flex-1">
+            <label class="text-xs text-gray-400 block mb-1">Nama Warna</label>
+            <input type="text" name="variants-${formNum}-color" 
+                   class="w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm" 
+                   placeholder="Warna">
+        </div>
+        <div class="flex-1">
+            <label class="text-xs text-gray-400 block mb-1">Ukuran</label>
+            <select name="variants-${formNum}-size" 
+                    class="w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm">
+                <option value="">---------</option>
+                <option value="ALL">All Size</option>
+                <option value="S">Small</option>
+                <option value="M">Medium</option>
+                <option value="L">Large</option>
+                <option value="XL">Extra Large</option>
+            </select>
+        </div>
+        <div class="flex-1">
+            <label class="text-xs text-gray-400 block mb-1">Stok</label>
+            <input type="number" name="variants-${formNum}-stock" 
+                   class="w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm" 
+                   placeholder="0" value="0">
+        </div>
+        <div class="flex-1">
+            <label class="text-xs text-gray-400 block mb-1">Harga Varian</label>
+            <input type="number" name="variants-${formNum}-price" 
+                   class="w-full bg-black/30 border border-brand-gray rounded-lg px-3 py-1 text-white text-sm" 
+                   placeholder="Opsional">
+        </div>
+        <div class="flex items-center">
+            <button type="button" onclick="this.closest('.variant-form').remove(); updateTotalForms(-1);" 
+                    class="text-red-400 hover:text-red-300 p-2" title="Hapus">
+                <i class="ri-delete-bin-line"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(newForm);
+    totalForms.value = formNum + 1;
+}
+
+function updateTotalForms(change) {
+    const totalForms = document.getElementById('id_variants-TOTAL_FORMS');
+    totalForms.value = Math.max(0, parseInt(totalForms.value) + change);
+}
 </script>
 {% endblock %}
+
