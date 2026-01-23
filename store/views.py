@@ -245,7 +245,8 @@ def order_create(request):
             if snap_token:
                 order.midtrans_snap_token = snap_token
                 order.save()
-                cart.clear() 
+                cart.clear()
+                request.session['order_id'] = order.id  # Store for confirmation page
                 return render(request, 'store/payment.html', {
                     'order': order,
                     'snap_token': snap_token,
@@ -357,6 +358,7 @@ def retry_payment_view(request, order_id):
     if snap_token:
         order.midtrans_snap_token = snap_token
         order.save()
+        request.session['order_id'] = order.id  # Store for confirmation page
         return render(request, 'store/payment.html', {
             'order': order,
             'snap_token': snap_token,
