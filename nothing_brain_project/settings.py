@@ -92,7 +92,7 @@ ROOT_URLCONF = 'nothing_brain_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], 
+        'DIRS': [BASE_DIR / 'templates'],  # Include project templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
