@@ -164,6 +164,11 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# WhiteNoise Configuration for Vercel (read-only filesystem)
+# This allows WhiteNoise to serve files directly without requiring collectstatic
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
 # Tailwind Config
 # Set True untuk menggunakan CDN (Aman untuk Vercel jika NPM gagal)
 # Set False jika menggunakan local build 'static/css/output.css'
