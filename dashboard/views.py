@@ -4,8 +4,8 @@ from django.db.models import Sum
 from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from store.models import Product, ProductVariant, Order, OrderItem, ProductImage
-from .forms import ProductForm, VariantFormSet, ImageFormSet
+from store.models import Product, ProductVariant, Order, OrderItem, ProductImage, Category
+from .forms import ProductForm, VariantFormSet, ImageFormSet, CategoryForm
 import json
 from datetime import datetime
 
@@ -232,6 +232,65 @@ def product_manage(request):
         'supabase_url': supabase_url,
         'supabase_key': supabase_key
     })
+
+
+# ==============================================================================
+# CATEGORY MANAGEMENT
+# ==============================================================================
+
+@login_required
+@user_passes_test(is_staff)
+def category_list(request):
+    """List all categories"""
+    categories = Category.objects.all().prefetch_related('products').order_by('name')
+    return render(request, 'dashboard/category_list.html', {
+        'categories': categories
+    })
+
+@login_required
+@user_passes_test(is_staff)
+def category_create(request):
+    """Create new category"""
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard:category_list')
+    else:
+        form = CategoryForm()
+    
+    return render(request, 'dashboard/form_category.html', {
+        'form': form,
+        'title': 'Tambah Kategori'
+    })
+
+@login_required
+@user_passes_test(is_staff)
+def category_edit(request, category_id):
+    """Edit existing category"""
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard:category_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    return render(request, 'dashboard/form_category.html', {
+        'form': form,
+        'title': f'Edit Kategori: {category.name}'
+    })
+
+@login_required
+@user_passes_test(is_staff)
+def category_delete(request, category_id):
+    """Delete category"""
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == 'POST':
+        category.delete()
+    return redirect('dashboard:category_list')
 
 @login_required
 @user_passes_test(is_staff)

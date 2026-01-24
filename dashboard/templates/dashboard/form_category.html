@@ -1,0 +1,73 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block header_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="glass-panel p-8 rounded-2xl max-w-xl mx-auto">
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl">
+            <ul class="list-disc list-inside text-sm">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div>
+            <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+                <i class="ri-folder-line"></i> Informasi Kategori
+            </h3>
+            <div class="space-y-4">
+                {% for field in form %}
+                <div>
+                    <label class="text-sm font-medium text-gray-400 block mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="text-gray-500 text-xs mt-1">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-4 pt-4 border-t border-brand-gray">
+            <a href="{% url 'dashboard:category_list' %}" class="px-6 py-2 rounded-lg border border-brand-gray text-gray-400 hover:text-white transition-colors">Batal</a>
+            <button type="submit" class="px-6 py-2 rounded-lg bg-white text-black font-bold hover:bg-gray-200 transition-colors">Simpan</button>
+        </div>
+    </form>
+</div>
+
+<!-- Auto Slug Script -->
+<script>
+function slugify(text) {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('category-name') || document.getElementById('id_name');
+    const slugInput = document.getElementById('category-slug') || document.getElementById('id_slug');
+    
+    if (nameInput && slugInput) {
+        let previousSlug = '';
+        nameInput.addEventListener('input', function() {
+            const newSlug = slugify(this.value);
+            if (slugInput.value === '' || slugInput.value === previousSlug) {
+                slugInput.value = newSlug;
+            }
+            previousSlug = newSlug;
+        });
+    }
+});
+</script>
+{% endblock %}

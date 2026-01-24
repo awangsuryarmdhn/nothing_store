@@ -15,4 +15,11 @@ urlpatterns = [
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
     path('orders/<int:order_id>/invoice/', views.order_invoice, name='order_invoice'),
     path('orders/<int:order_id>/retry/', views.order_retry_payment, name='order_retry_payment'),
+    
+    # Category Management
+    path('categories/', views.category_list, name='category_list'),
+    path('categories/create/', views.category_create, name='category_create'),
+    path('categories/<int:category_id>/edit/', views.category_edit, name='category_edit'),
+    path('categories/<int:category_id>/delete/', views.category_delete, name='category_delete'),
 ]
+
