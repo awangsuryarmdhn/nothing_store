@@ -417,7 +417,21 @@ def midtrans_webhook(request):
             if order.status == 'paid':
                 return HttpResponse("Order already paid", status=200)
 
-            if transaction_status == 'settlement' and fraud_status == 'accept':
+            # Logic Status Midtrans
+            is_paid = False
+            if transaction_status == 'capture':
+                if fraud_status == 'challenge':
+                    return HttpResponse("Challenged", status=200)
+                elif fraud_status == 'accept':
+                    is_paid = True
+            elif transaction_status == 'settlement':
+                is_paid = True
+            elif transaction_status in ['cancel', 'deny', 'expire']:
+                order.status = 'failed'
+                order.save()
+                return HttpResponse("Order cancelled", status=200)
+
+            if is_paid:
                 with transaction.atomic():
                     order.status = 'paid'
                     order.save()
@@ -434,10 +448,9 @@ def midtrans_webhook(request):
                 
                 # Kirim Email
                 _send_success_emails(order)
+                return HttpResponse("Order paid", status=200)
 
-            elif transaction_status in ['cancel', 'deny', 'expire']:
-                order.status = 'failed'
-                order.save()
+            return HttpResponse("OK", status=200)
             
             return HttpResponse("OK", status=200)
         
