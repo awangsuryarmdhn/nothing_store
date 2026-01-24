@@ -281,18 +281,15 @@ def order_create(request):
             default_addr = Address.objects.filter(user=request.user, is_default=True).first()
             if default_addr:
                 initial_data = {
-                    'first_name': default_addr.full_name.split(' ')[0],
-                    'last_name': ' '.join(default_addr.full_name.split(' ')[1:]),
+                    'first_name': default_addr.full_name, # Use full name
                     'email': request.user.email,
                     'address': default_addr.address_line,
                     'city': default_addr.city,
-                    'postal_code': default_addr.postal_code,
                 }
             else:
                 initial_data = {
                     'email': request.user.email, 
-                    'first_name': request.user.first_name, 
-                    'last_name': request.user.last_name
+                    'first_name': request.user.get_full_name() or request.user.username, 
                 }
         form = OrderCreateForm(initial=initial_data)
         
