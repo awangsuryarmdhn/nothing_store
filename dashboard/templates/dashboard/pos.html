@@ -169,52 +169,82 @@
          style="display: none;"
          x-transition.opacity>
         <div class="bg-[#1a1a1a] border border-gray-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
-            <button @click="showPaymentModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-                <i class="ri-close-line text-2xl"></i>
-            </button>
+            
+            <!-- VIEW 1: INPUT PEMBAYARAN -->
+            <div x-show="!transactionSuccess">
+                <button @click="showPaymentModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                    <i class="ri-close-line text-2xl"></i>
+                </button>
 
-            <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <i class="ri-wallet-3-line"></i> Pembayaran
-            </h3>
+                <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <i class="ri-wallet-3-line"></i> Pembayaran
+                </h3>
 
-            <!-- Details -->
-            <div class="space-y-4 mb-8">
-                <div class="flex justify-between text-gray-400">
-                    <span>Total Tagihan</span>
-                    <span class="text-white font-bold text-xl" x-text="formatRupiah(total)"></span>
+                <!-- Details -->
+                <div class="space-y-4 mb-8">
+                    <div class="flex justify-between text-gray-400">
+                        <span>Total Tagihan</span>
+                        <span class="text-white font-bold text-xl" x-text="formatRupiah(total)"></span>
+                    </div>
+                    
+                    <!-- Cash Input -->
+                    <div x-show="paymentMethod === 'cash'">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Uang Diterima (Cash)</label>
+                        <input type="number" x-model="cashReceived" @input="calculateChange()" 
+                               class="w-full bg-black/50 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-green-500 focus:outline-none"
+                               placeholder="0">
+                    </div>
+
+                    <div class="flex justify-between text-gray-400 border-t border-gray-700 pt-4" x-show="paymentMethod === 'cash'">
+                        <span>Kembalian</span>
+                        <span class="text-green-500 font-bold text-xl" x-text="formatRupiah(change)"></span>
+                    </div>
+
+                    <!-- QR Warning -->
+                    <div x-show="paymentMethod === 'qr'" class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg text-blue-300 text-sm">
+                        <i class="ri-information-line mr-1"></i> Pastikan pembayaran QRIS sudah berhasil diverifikasi sebelum melanjutkan.
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex gap-3">
+                    <button @click="showPaymentModal = false" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 hover:bg-white/5 transition-colors">
+                        Batal
+                    </button>
+                    <button @click="processPayment()" 
+                            :disabled="!canPay"
+                            class="flex-1 py-3 rounded-xl font-bold bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!isProcessing">Bayar & Cetak</span>
+                        <span x-show="isProcessing"><i class="ri-loader-4-line animate-spin"></i> Memproses...</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 2: TRANSAKSI SUKSES -->
+            <div x-show="transactionSuccess" class="text-center py-6">
+                <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(34,197,94,0.5)]">
+                    <i class="ri-check-line text-4xl text-white"></i>
                 </div>
                 
-                <!-- Cash Input -->
-                <div x-show="paymentMethod === 'cash'">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Uang Diterima (Cash)</label>
-                    <input type="number" x-model="cashReceived" @input="calculateChange()" 
-                           class="w-full bg-black/50 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-green-500 focus:outline-none"
-                           placeholder="0">
+                <h3 class="text-2xl font-bold text-white mb-2">Pembayaran Berhasil!</h3>
+                <p class="text-gray-400 text-sm mb-8">Transaksi telah disimpan di server.</p>
+                
+                <div class="bg-white/5 rounded-xl p-4 mb-8" x-show="lastOrder?.method === 'cash'">
+                    <p class="text-gray-400 text-xs uppercase tracking-widest mb-1">Kembalian</p>
+                    <p class="text-3xl font-bold text-green-400" x-text="formatRupiah(lastOrder?.change || 0)"></p>
                 </div>
 
-                <div class="flex justify-between text-gray-400 border-t border-gray-700 pt-4" x-show="paymentMethod === 'cash'">
-                    <span>Kembalian</span>
-                    <span class="text-green-500 font-bold text-xl" x-text="formatRupiah(change)"></span>
-                </div>
-
-                <!-- QR Warning -->
-                <div x-show="paymentMethod === 'qr'" class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg text-blue-300 text-sm">
-                    <i class="ri-information-line mr-1"></i> Pastikan pembayaran QRIS sudah berhasil diverifikasi sebelum melanjutkan.
+                <div class="flex flex-col gap-3">
+                    <button @click="printReceipt()" class="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                        <i class="ri-printer-line text-lg"></i> Cetak Struk
+                    </button>
+                    
+                    <button @click="resetPOS()" class="w-full py-4 bg-transparent border border-gray-600 text-white font-bold rounded-xl hover:bg-white/10 transition-colors">
+                        Transaksi Baru
+                    </button>
                 </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex gap-3">
-                <button @click="showPaymentModal = false" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 hover:bg-white/5 transition-colors">
-                    Batal
-                </button>
-                <button @click="processPayment()" 
-                        :disabled="!canPay"
-                        class="flex-1 py-3 rounded-xl font-bold bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span x-show="!isProcessing">Bayar & Cetak</span>
-                    <span x-show="isProcessing"><i class="ri-loader-4-line animate-spin"></i> Memproses...</span>
-                </button>
-            </div>
         </div>
     </div>
 
@@ -478,6 +508,7 @@
 
             // --- CHECKOUT LOGIC ---
             showPaymentModal: false,
+            transactionSuccess: false,
             paymentMethod: 'cash',
             cashReceived: '',
             change: 0,
@@ -504,6 +535,7 @@
                 this.paymentMethod = method;
                 this.cashReceived = '';
                 this.change = 0;
+                this.transactionSuccess = false; // Reset state
                 this.showPaymentModal = true;
             },
 
@@ -536,13 +568,7 @@
                             
                             window.snap.pay(result.snap_token, {
                                 onSuccess: (snapResult) => {
-                                    // QRIS Scanned successfully, but settlement might be delayed.
-                                    // User requested: "tunggu pembayaran sudah settlement baru invoice lunas"
-                                    
-                                    alert('Pembayaran QRIS Berhasil di-Scan. Menunggu Konfirmasi Sistem (Settlement)...');
-                                    
-                                    // Print Receipt with PENDING status note? Or wait?
-                                    // For now, we finalize visually but maybe add a PENDING note on receipt
+                                    alert('Pembayaran QRIS Berhasil di-Scan.');
                                     this.lastOrder = {
                                         id: result.order_id,
                                         items: JSON.parse(JSON.stringify(this.cart)),
@@ -552,13 +578,11 @@
                                         change: 0,
                                         date: new Date().toLocaleString()
                                     };
-                                    
-                                    this.finalizeSuccess(result.order_id, false); // false = don't print immediately if strict? 
-                                    // Or prints "Pending"? Let's just print but label it correctly.
+                                    this.finalizeSuccess(); 
                                 },
                                 onPending: (snapResult) => {
-                                    alert('Pembayaran Pending. Cek status di dashboard nanti.');
-                                    this.finalizeSuccess(result.order_id, false);
+                                    alert('Pembayaran Pending.');
+                                    this.finalizeSuccess();
                                 },
                                 onError: (snapResult) => {
                                     alert('Pembayaran Gagal!');
@@ -584,7 +608,7 @@
                 }
             },
 
-            finalizeSuccess(orderId, autoPrint = true) {
+            finalizeSuccess(orderId) {
                 // If lastOrder not set by specific handler (like QR above), set default here
                 if (!this.lastOrder) {
                     this.lastOrder = {
@@ -600,16 +624,22 @@
 
                 // Success Actions
                 this.cart = [];
-                this.showPaymentModal = false;
                 this.isProcessing = false;
-                
-                // Wait modal close transition then print
-                if (autoPrint) {
-                    setTimeout(() => {
-                        window.print();
-                    }, 300);
-                }
+                this.transactionSuccess = true; // Show Success View
+            },
+
+            resetPOS() {
+                this.showPaymentModal = false;
+                this.transactionSuccess = false;
+                this.cashReceived = '';
+                this.lastOrder = null;
+                this.customerEmail = '';
+            },
+
+            printReceipt() {
+                window.print();
             }
+
 
 
         }
