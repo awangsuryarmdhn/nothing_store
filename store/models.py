@@ -5,6 +5,10 @@ from django.db.models import Sum
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
+# ImageKit for image optimization
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFill, ResizeToFit
+
 User = get_user_model()
 
 # ==========================================
@@ -160,6 +164,23 @@ class Product(models.Model):
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField("Gambar", upload_to='products/%Y/%m/%d')
+    
+    # Optimized image specs using django-imagekit
+    # Thumbnail untuk listing (400x500 - rasio 4:5)
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(400, 500)],
+        format='WEBP',
+        options={'quality': 80}
+    )
+    
+    # Medium untuk detail page (800x1000)
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFit(800, 1000)],
+        format='WEBP',
+        options={'quality': 85}
+    )
 
     class Meta:
         verbose_name = "Gambar Produk"
@@ -167,6 +188,7 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Gambar untuk {self.product.name}"
+
 
 
 class ProductVariant(models.Model):

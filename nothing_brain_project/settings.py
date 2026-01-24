@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     
     # Library Tambahan
     'storages', # <--- Untuk Supabase Storage / S3
+    'imagekit', # <--- Untuk Image Optimization (resize, compress)
     'django.contrib.humanize', # Untuk format Rupiah (intcomma)
 
     # Apps Buatan Sendiri
@@ -192,7 +193,7 @@ if config('SUPABASE_ACCESS_KEY_ID', default=None):
     AWS_S3_VERIFY = True
 
     AWS_S3_OBJECT_PARAMETERS = {
-            'CacheControl': 'max-age=86400',
+            'CacheControl': 'max-age=31536000',  # 1 year cache for images
         }
 
     # PERBAIKAN: Gunakan WhiteNoise untuk staticfiles agar admin CSS berfungsi

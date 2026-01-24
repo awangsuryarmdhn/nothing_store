@@ -7,6 +7,7 @@ app_name = 'store'
 urlpatterns = [
     path('akun/pesanan/<int:order_id>/', views.order_detail_view, name='order_detail'),
     path('pesanan/bayar/<int:order_id>/', views.retry_payment_view, name='retry_payment'),
+    path('pesanan/sync/<int:order_id>/', views.sync_order_status, name='sync_order_status'),
     path('webhook/midtrans/', views.midtrans_webhook, name='midtrans_webhook'),
     path('tentang-kami/', views.about_us_view, name='about_us'),
     path('akun/alamat/', views.address_list_view, name='address_list'),
