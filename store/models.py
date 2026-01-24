@@ -237,6 +237,10 @@ class Order(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     midtrans_snap_token = models.CharField(max_length=100, blank=True, null=True)
 
+    # Shipping & Tracking
+    tracking_number = models.CharField("Nomor Resi", max_length=100, blank=True, null=True)
+    shipped_date = models.DateTimeField("Tanggal Pengiriman", blank=True, null=True)
+
     channel = models.CharField("Channel", max_length=20, choices=[('online', 'Online Store'), ('pos', 'POS')], default='online')
     cashier = models.ForeignKey(User, related_name='processed_orders', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kasir")
 
