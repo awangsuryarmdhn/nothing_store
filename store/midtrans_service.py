@@ -3,6 +3,10 @@ from django.conf import settings
 import uuid
 
 def create_snap_transaction(order):
+    """
+    Create Midtrans Snap transaction and return (token, midtrans_order_id).
+    Returns (None, None) if failed.
+    """
     # Inisialisasi klien Snap Midtrans
     snap = midtransclient.Snap(
         is_production=settings.MIDTRANS_IS_PRODUCTION,
@@ -29,11 +33,12 @@ def create_snap_transaction(order):
             'name': 'Biaya Pengiriman'
         })
 
-
+    # Generate Midtrans Order ID (simpan untuk lookup status nanti)
+    midtrans_order_id = f"{order.id}-{uuid.uuid4().hex[:6]}"
+    
     # Siapkan parameter transaksi
-    # gross_amount sekarang harus sama dengan total dari item_details
     transaction_details = {
-        'order_id': f"{order.id}-{uuid.uuid4().hex[:6]}",
+        'order_id': midtrans_order_id,
         'gross_amount': int(order.get_total_cost())
     }
     
@@ -51,7 +56,8 @@ def create_snap_transaction(order):
 
     try:
         transaction = snap.create_transaction(params)
-        return transaction['token']
+        # Return both token and order_id
+        return transaction['token'], midtrans_order_id
     except Exception as e:
         print(f"Error Midtrans: {e}")
-        return None
+        return None, None

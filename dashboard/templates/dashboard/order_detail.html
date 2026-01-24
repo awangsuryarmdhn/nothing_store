@@ -63,6 +63,9 @@
                 </a>
                 
                 {% if order.status != 'paid' %}
+                <a href="{% url 'store:sync_order_status' order.id %}" class="block w-full bg-green-600/90 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-colors text-center border border-green-500 mb-2">
+                    <i class="ri-refresh-line mr-2"></i> Sync dari Midtrans
+                </a>
                 <a href="{% url 'dashboard:order_retry_payment' order.id %}" class="block w-full bg-blue-600/90 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition-colors text-center border border-blue-500">
                     <i class="ri-refresh-line mr-2"></i> Buka Pembayaran
                 </a>

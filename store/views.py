@@ -259,9 +259,10 @@ def order_create(request):
                 )
             
             # Generate Midtrans Token
-            snap_token = create_snap_transaction(order)
+            snap_token, midtrans_order_id = create_snap_transaction(order)
             if snap_token:
                 order.midtrans_snap_token = snap_token
+                order.midtrans_order_id = midtrans_order_id
                 order.save()
                 cart.clear()
                 request.session['order_id'] = order.id  # Store for confirmation page
@@ -376,9 +377,10 @@ def retry_payment_view(request, order_id):
     if order.midtrans_snap_token and not renew:
         snap_token = order.midtrans_snap_token
     else:
-        snap_token = create_snap_transaction(order)
+        snap_token, midtrans_order_id = create_snap_transaction(order)
         if snap_token:
             order.midtrans_snap_token = snap_token
+            order.midtrans_order_id = midtrans_order_id
             order.save()
             
     if snap_token:
@@ -456,8 +458,6 @@ def midtrans_webhook(request):
                 return HttpResponse("Order paid", status=200)
 
             return HttpResponse("OK", status=200)
-            
-            return HttpResponse("OK", status=200)
         
         except Order.DoesNotExist:
             return HttpResponse("Order Not Found", status=404)
@@ -481,13 +481,19 @@ def sync_order_status(request, order_id):
     
     if order.status == 'paid':
         messages.info(request, f"Order #{order_id} sudah berstatus PAID.")
-        return redirect('store:account_dashboard')
+        return redirect('dashboard:order_detail', order_id=order.id)
     
-    # Get Midtrans order ID from snap token or try known patterns
-    # Midtrans order_id format: {order_id}-{uuid}
+    # Check if we have midtrans_order_id
+    if not order.midtrans_order_id:
+        messages.warning(
+            request, 
+            f"Order #{order_id} tidak memiliki Midtrans Order ID. "
+            f"Silakan update status manual di halaman detail order."
+        )
+        return redirect('dashboard:order_detail', order_id=order.id)
+    
     server_key = settings.MIDTRANS_SERVER_KEY
     
-    # Try to get status from Midtrans API
     try:
         # Encode server key for Basic Auth
         auth_string = base64.b64encode(f"{server_key}:".encode()).decode()
@@ -495,33 +501,53 @@ def sync_order_status(request, order_id):
         # Midtrans API endpoint (sandbox or production)
         base_url = "https://api.midtrans.com" if settings.MIDTRANS_IS_PRODUCTION else "https://api.sandbox.midtrans.com"
         
-        # We need to find the transaction - try with order prefix
-        # This requires knowing the exact order_id used in Midtrans
-        # For now, we'll check recent transactions or use a stored reference
+        # Call Midtrans Status API
+        url = f"{base_url}/v2/{order.midtrans_order_id}/status"
+        headers = {
+            'Authorization': f'Basic {auth_string}',
+            'Content-Type': 'application/json'
+        }
         
-        # If we have the snap token, we can try to find the order
-        # Otherwise, admin needs to check Midtrans dashboard
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
         
-        if not order.midtrans_snap_token:
-            messages.warning(request, f"Order #{order_id} tidak memiliki Midtrans token. Silakan cek di Midtrans Dashboard.")
-            return redirect('dashboard:orders')
+        transaction_status = data.get('transaction_status')
+        fraud_status = data.get('fraud_status', 'accept')
         
-        # Try common order ID patterns
-        # Since we use format: {order_id}-{uuid}, we need to search
-        messages.info(
-            request, 
-            f"Order #{order_id} perlu dicek manual di Midtrans Dashboard. "
-            f"Jika sudah settlement, update status di admin panel."
-        )
+        # Update status based on Midtrans response
+        if transaction_status in ['capture', 'settlement']:
+            if transaction_status == 'capture' and fraud_status == 'challenge':
+                messages.warning(request, f"Order #{order_id} challenged by fraud detection.")
+            else:
+                # Mark as paid
+                with transaction.atomic():
+                    order.status = 'paid'
+                    order.save()
+                    
+                    # Kurangi stok
+                    for item in order.items.all():
+                        item.variant.stock = F('stock') - item.quantity
+                        item.variant.save()
+                
+                messages.success(request, f"✅ Order #{order_id} berhasil di-sync! Status: PAID")
+                
+        elif transaction_status in ['pending']:
+            messages.info(request, f"Order #{order_id} masih PENDING di Midtrans.")
+            
+        elif transaction_status in ['cancel', 'deny', 'expire']:
+            order.status = 'failed'
+            order.save()
+            messages.warning(request, f"Order #{order_id} status: {transaction_status.upper()}")
+            
+        else:
+            messages.info(request, f"Order #{order_id} status dari Midtrans: {transaction_status}")
         
+    except requests.exceptions.RequestException as e:
+        messages.error(request, f"Gagal koneksi ke Midtrans API: {e}")
     except Exception as e:
-        messages.error(request, f"Gagal sync dari Midtrans: {e}")
+        messages.error(request, f"Error sync: {e}")
     
-    # Redirect back to referrer or dashboard
-    referer = request.META.get('HTTP_REFERER')
-    if referer and 'dashboard' in referer:
-        return redirect('dashboard:orders')
-    return redirect('store:account_dashboard')
+    return redirect('dashboard:order_detail', order_id=order.id)
 
 
 def _send_success_emails(order):

@@ -266,6 +266,7 @@ class Order(models.Model):
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     midtrans_snap_token = models.CharField(max_length=100, blank=True, null=True)
+    midtrans_order_id = models.CharField("Midtrans Order ID", max_length=100, blank=True, null=True, help_text="ID transaksi di Midtrans untuk lookup status")
 
     # Shipping & Tracking
     tracking_number = models.CharField("Nomor Resi", max_length=100, blank=True, null=True)
