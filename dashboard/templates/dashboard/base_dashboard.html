@@ -99,6 +99,11 @@
                     <span class="font-medium text-sm">Products</span>
                 </a>
                 
+                <a href="{% url 'dashboard:category_list' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if 'categor' in request.path %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
+                    <i class="ri-folder-line text-lg {% if 'categor' in request.path %}text-brand-accent{% endif %}"></i>
+                    <span class="font-medium text-sm">Categories</span>
+                </a>
+                
                 <a href="{% url 'dashboard:order_list' %}" class="group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 border border-transparent {% if 'orders' in request.path %}bg-white/10 text-white border-white/10 shadow-lg shadow-black/20{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %}">
                     <i class="ri-shopping-cart-2-line text-lg {% if 'orders' in request.path %}text-brand-accent{% endif %}"></i>
                     <span class="font-medium text-sm">Orders</span>
