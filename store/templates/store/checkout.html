@@ -117,48 +117,72 @@
                 </div>
                 {% endif %}
 
-                <form action="." method="post" class="custom-form space-y-8" id="checkout-form">
-                    {% csrf_token %}
+                    <!-- TOM SELECT CSS -->
+                    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
                     
-                    <div>
-                        <h2 class="font-display text-xl font-bold uppercase mb-6 flex items-center gap-2">
-                            Contact Info
-                        </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="{{ form.first_name.id_for_label }}">First Name</label>
-                                {{ form.first_name }}
-                            </div>
-                            <div>
-                                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
-                                {{ form.last_name }}
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="{{ form.email.id_for_label }}">Email Address</label>
-                                {{ form.email }}
-                            </div>
-                        </div>
-                    </div>
+                    <style>
+                        /* Tom Select Customization */
+                        .ts-control {
+                            border: none !important;
+                            border-bottom: 1px solid #e5e7eb !important;
+                            padding: 12px 0 !important;
+                            background: transparent !important;
+                            border-radius: 0 !important;
+                            box-shadow: none !important;
+                        }
+                        .ts-control.focus { border-bottom-color: #000 !important; }
+                        .ts-dropdown { border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid #f3f4f6; }
+                    </style>
 
-                    <div>
-                        <h2 class="font-display text-xl font-bold uppercase mb-6 mt-10">Shipping Address</h2>
-                        <div class="space-y-6">
-                            <div>
-                                <label for="{{ form.address.id_for_label }}">Street Address</label>
-                                {{ form.address }}
-                            </div>
-                            <div class="grid grid-cols-2 gap-6">
+                    <form action="." method="post" class="custom-form space-y-8" id="checkout-form">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <h2 class="font-display text-xl font-bold uppercase mb-6 flex items-center gap-2">
+                                Contact Info
+                            </h2>
+                            <div class="space-y-6">
                                 <div>
-                                    <label for="{{ form.city.id_for_label }}">City</label>
-                                    {{ form.city }}
+                                    <label for="{{ form.first_name.id_for_label }}">Nama Lengkap</label>
+                                    {{ form.first_name }}
                                 </div>
                                 <div>
-                                    <label for="{{ form.postal_code.id_for_label }}">Postal Code</label>
-                                    {{ form.postal_code }}
+                                    <label for="{{ form.email.id_for_label }}">Email Address</label>
+                                    {{ form.email }}
                                 </div>
                             </div>
                         </div>
-                    </div>
+
+                        <div>
+                            <h2 class="font-display text-xl font-bold uppercase mb-6 mt-10">Shipping Address</h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="{{ form.city.id_for_label }}">Kota / Kabupaten</label>
+                                    <select id="id_city" name="city" placeholder="Cari Kota Tujuan..." autocomplete="off">
+                                        <option value="">Cari Kota...</option>
+                                        <!-- Popular / Promo Cities -->
+                                        <option value="Kota Pontianak">Kota Pontianak</option>
+                                        <option value="Kota Singkawang">Kota Singkawang</option>
+                                        <option value="Kota Semarang">Kota Semarang</option>
+                                        <!-- Other Major Cities -->
+                                        <option value="Kota Jakarta Pusat">Kota Jakarta Pusat</option>
+                                        <option value="Kota Jakarta Selatan">Kota Jakarta Selatan</option>
+                                        <option value="Kota Jakarta Barat">Kota Jakarta Barat</option>
+                                        <option value="Kota Jakarta Timur">Kota Jakarta Timur</option>
+                                        <option value="Kota Surabaya">Kota Surabaya</option>
+                                        <option value="Kota Bandung">Kota Bandung</option>
+                                        <option value="Kota Medan">Kota Medan</option>
+                                        <option value="Kota Makassar">Kota Makassar</option>
+                                        <option value="Kabupaten Kubu Raya">Kabupaten Kubu Raya</option>
+                                        <option value="Kabupaten Mempawah">Kabupaten Mempawah</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="{{ form.address.id_for_label }}">Alamat Lengkap (Jalan, No. Rumah, RT/RW)</label>
+                                    {{ form.address }}
+                                </div>
+                            </div>
+                        </div>
 
                     <!-- Shipping Methods Section -->
                     <div id="shipping-section">
@@ -332,43 +356,53 @@
   </form>
 </dialog>
 
+</script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Initialize Tom Select for City Search
+    let citySelect;
+    if (document.getElementById('id_city')) {
+        citySelect = new TomSelect("#id_city", {
+            create: true, // Allow user to type new city if not in list
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            onChange: function(value) {
+                checkPromoCity(); // Trigger promo check on change
+            }
+        });
+    }
+
     const addressCards = document.querySelectorAll('.address-card');
     
-    // Target fields by standard Django IDs (id_fieldname)
+    // Target inputs
     const inputs = {
         firstName: document.getElementById('id_first_name'),
-        lastName: document.getElementById('id_last_name'),
-        email: document.getElementById('id_email'), // Optional, usually not in address model
+        email: document.getElementById('id_email'),
         address: document.getElementById('id_address'),
-        city: document.getElementById('id_city'),
-        postalCode: document.getElementById('id_postal_code')
+        // City is handled by TomSelect instance 'citySelect'
     };
 
     addressCards.forEach(card => {
         card.addEventListener('click', () => {
-            // 1. Visual Selection Logic
-            addressCards.forEach(c => {
-                c.classList.remove('selected', 'border-black');
-                c.classList.add('border-gray-100');
-            });
+            // Visual Selection
+            addressCards.forEach(c => c.classList.remove('selected', 'border-black'));
+            addressCards.forEach(c => c.classList.add('border-gray-100'));
             card.classList.add('selected', 'border-black');
             card.classList.remove('border-gray-100');
 
-            // 2. Data Population Logic
-            const fullName = card.dataset.fullname.trim().split(' ');
-            const firstName = fullName[0];
-            const lastName = fullName.slice(1).join(' ');
-
-            if(inputs.firstName) inputs.firstName.value = firstName;
-            if(inputs.lastName) inputs.lastName.value = lastName;
-            if(inputs.address) inputs.address.value = card.dataset.address;
-            if(inputs.city) inputs.city.value = card.dataset.city;
-            if(inputs.postalCode) inputs.postalCode.value = card.dataset.postal;
+            // Data Population
+            const fullName = card.dataset.fullname;
             
-            // Optional: Scroll to form smoothly
-            // document.getElementById('checkout-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if(inputs.firstName) inputs.firstName.value = fullName;
+            if(inputs.address) inputs.address.value = card.dataset.address;
+            
+            // Set City via TomSelect
+            if (citySelect && card.dataset.city) {
+                citySelect.setValue(card.dataset.city);
+            }
         });
     });
 

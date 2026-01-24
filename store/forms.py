@@ -48,8 +48,14 @@ class CartAddProductForm(forms.Form):
 
 class OrderCreateForm(forms.ModelForm):
     class Meta:
-        model = Order; fields = ['first_name', 'last_name', 'email', 'address', 'postal_code', 'city']
-        widgets = {'first_name': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Nama Depan'}), 'last_name': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Nama Belakang'}), 'email': forms.EmailInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Email'}), 'address': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Alamat Lengkap'}), 'postal_code': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Kode Pos'}), 'city': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Kota'})}
+        model = Order
+        fields = ['first_name', 'email', 'address', 'city']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Nama Lengkap'}), 
+            'email': forms.EmailInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Email'}), 
+            'address': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Alamat Lengkap'}), 
+            'city': forms.TextInput(attrs={'class': 'input input-bordered w-full', 'placeholder': 'Cari Kota...'})
+        }
 
 class ReduceStockForm(forms.Form):
     channel = forms.ChoiceField(
