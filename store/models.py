@@ -65,6 +65,14 @@ class Profile(models.Model):
     def __str__(self):
         return f'Profil {self.user.username}'
 
+    @property
+    def avatar_url(self):
+        """Returns uploaded image or DiceBear avatar if default"""
+        if self.image and self.image.name != 'default.jpg':
+            return self.image.url
+        # DiceBear Avatars (Notionists Style)
+        return f"https://api.dicebear.com/9.x/notionists/svg?seed={self.user.username}&backgroundColor=b6e3f4,c0aede,d1d4f9"
+
 
 class Address(models.Model):
     user = models.ForeignKey(User, related_name='addresses', on_delete=models.CASCADE)

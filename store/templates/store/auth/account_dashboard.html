@@ -40,11 +40,7 @@
                     
                     <div class="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50/50">
                         <div class="w-14 h-14 rounded-full overflow-hidden border border-gray-300 bg-white shrink-0">
-                            {% if user.profile and user.profile.image %}
-                                <img src="{{ user.profile.image.url }}" class="w-full h-full object-cover" alt="Profile">
-                            {% else %}
-                                <img src="https://ui-avatars.com/api/?name={{ user.first_name }}+{{ user.last_name }}&background=000&color=fff&size=128" class="w-full h-full object-cover" alt="Default">
-                            {% endif %}
+                            <img src="{{ user.profile.avatar_url }}" class="w-full h-full object-cover" alt="Profile">
                         </div>
                         <div class="overflow-hidden">
                             <h3 class="font-bold text-sm uppercase tracking-wide truncate">{{ user.first_name }} {{ user.last_name }}</h3>

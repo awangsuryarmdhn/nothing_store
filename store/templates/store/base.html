@@ -89,9 +89,15 @@
 
                         <div class="dropdown dropdown-end border-l border-gray-200 pl-2 ml-1">
                             <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder hover:bg-gray-100">
+                                {% if user.is_authenticated and user.profile %}
+                                <div class="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                                    <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}'">
+                                </div>
+                                {% else %}
                                 <div class="bg-black text-white rounded-full w-8 transition-transform hover:scale-105">
                                     <i data-lucide="user" class="w-4 h-4"></i>
                                 </div>
+                                {% endif %}
                             </div>
                             <ul tabindex="0" class="menu menu-sm dropdown-content mt-4 z-[1] p-2 shadow-xl bg-white rounded-none w-56 border border-gray-100 ring-1 ring-black/5">
                                 {% if user.is_authenticated %}
