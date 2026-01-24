@@ -218,12 +218,30 @@ def order_create(request):
             if request.user.is_authenticated:
                 order.user = request.user
             
+            # --- SHIPPING LOGIC ---
+            city_lower = order.city.lower().strip()
+            promo_cities = ['pontianak', 'singkawang', 'semarang']
+            
+            shipping_option = request.POST.get('shipping_option', 'standard')
+            order.shipping_option = shipping_option
+            
+            if any(pc in city_lower for pc in promo_cities):
+                # Gratis Ongkir untuk kota promo
+                order.shipping_cost = 0
+                order.shipping_option = "Gratis Ongkir (Promo)"
+            elif shipping_option == 'self':
+                # Bayar Ongkir di Tempat (COD Ongkir)
+                order.shipping_cost = 0
+                order.shipping_option = "Bayar Ongkir di Tujuan"
+            else:
+                # Standard Flat Rate
+                order.shipping_cost = 15000
+                order.shipping_option = "Jasa Kirim Toko"
+
             # Ambil diskon dari session (jika ada kupon)
             discount_percent = request.session.get('discount_percent', 0)
             order.discount = discount_percent
             
-            # TODO: Integrasi RajaOngkir di sini untuk cost dinamis
-            order.shipping_cost = 15000 
             order.save()
             
             # Clear coupon session setelah order dibuat
@@ -248,6 +266,7 @@ def order_create(request):
                 cart.clear()
                 request.session['order_id'] = order.id  # Store for confirmation page
                 return render(request, 'store/payment.html', {
+
                     'order': order,
                     'snap_token': snap_token,
                     'client_key': settings.MIDTRANS_CLIENT_KEY

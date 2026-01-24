@@ -160,18 +160,45 @@
                         </div>
                     </div>
 
-                    <div>
+                    <!-- Shipping Methods Section -->
+                    <div id="shipping-section">
                         <h2 class="font-display text-xl font-bold uppercase mb-6 mt-10">Shipping Method</h2>
-                        <div class="border border-black bg-gray-50 rounded-xl p-4 flex items-center justify-between cursor-pointer">
+                        
+                        <!-- Option 1: Promo Free Shipping (Hidden by default) -->
+                        <div id="promo-shipping" class="border border-green-500 bg-green-50 rounded-xl p-4 items-center justify-between cursor-pointer hidden mb-4">
                             <div class="flex items-center gap-3">
-                                <input type="radio" name="shipping_option" class="radio radio-xs checked:bg-black border-gray-400" checked />
+                                <input type="radio" name="shipping_option" value="promo" class="radio radio-xs checked:bg-green-600 border-green-500" disabled checked />
                                 <div>
-                                    <span class="block text-sm font-bold uppercase tracking-wide">Standard Delivery</span>
-                                    <span class="block text-xs text-gray-500">Estimasi 2-4 Hari Kerja</span>
+                                    <span class="block text-sm font-bold uppercase tracking-wide text-green-700">Gratis Ongkir (Promo)</span>
+                                    <span class="block text-xs text-green-600">Khusus Pontianak, Singkawang, Semarang</span>
+                                </div>
+                            </div>
+                            <span class="text-sm font-bold text-green-700">Rp 0</span>
+                        </div>
+
+                        <!-- Option 2: Standard (Store Service) -->
+                        <label id="standard-shipping" class="border border-black bg-gray-50 rounded-xl p-4 flex items-center justify-between cursor-pointer mb-4 hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="shipping_option" value="standard" class="radio radio-xs checked:bg-black border-gray-400" checked onchange="updateShipping(15000)" />
+                                <div>
+                                    <span class="block text-sm font-bold uppercase tracking-wide">Jasa Kirim Toko</span>
+                                    <span class="block text-xs text-gray-500">Flat Rate (Seluruh Indonesia)</span>
                                 </div>
                             </div>
                             <span class="text-sm font-bold">Rp 15.000</span>
-                        </div>
+                        </label>
+
+                        <!-- Option 3: Pay at Destination (Self/COD Ongkir) -->
+                        <label id="self-shipping" class="border border-gray-200 bg-white rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="shipping_option" value="self" class="radio radio-xs checked:bg-black border-gray-400" onchange="updateShipping(0)" />
+                                <div>
+                                    <span class="block text-sm font-bold uppercase tracking-wide">Bayar Ongkir di Tujuan</span>
+                                    <span class="block text-xs text-gray-500">Bayar biaya kirim langsung ke kurir/ekspedisi</span>
+                                </div>
+                            </div>
+                            <span class="text-sm font-bold">Rp 0*</span>
+                        </label>
                     </div>
 
                     <div class="pt-6">
@@ -403,6 +430,100 @@ document.addEventListener('DOMContentLoaded', function() {
         couponMessage.classList.remove('hidden', 'text-green-600', 'text-red-500');
         couponMessage.classList.add(success ? 'text-green-600' : 'text-red-500');
     }
+    
+    // ==========================================
+    // SHIPPING LOGIC
+    // ==========================================
+    const cityInput = document.getElementById('id_city');
+    const promoShipping = document.getElementById('promo-shipping');
+    const standardShipping = document.getElementById('standard-shipping');
+    const selfShipping = document.getElementById('self-shipping');
+    const shippingDisplay = document.querySelector('.space-y-3 span.font-medium.text-black:nth-of-type(1)'); // Target Shipping Price Display
+    // Note: Selector shippingDisplay di atas mungkin rapuh, bisa kita beri ID di HTML dulu untuk lebih aman.
+    // Tapi karena saya tidak edit HTML bagian summary, saya pakai JS untuk cari text 'Shipping' parent.
+    
+    // Cari elemen display shipping cost
+    let shippingCostEl = null;
+    document.querySelectorAll('.space-y-3 .flex').forEach(row => {
+        if(row.children[0].textContent.includes('Shipping')) {
+            shippingCostEl = row.children[1];
+        }
+    });
+
+    const promoCities = ['pontianak', 'singkawang', 'semarang'];
+    let currentShippingCost = 15000;
+
+    function checkPromoCity() {
+        if (!cityInput) return;
+        const city = cityInput.value.toLowerCase().trim();
+        const isPromo = promoCities.some(pc => city.includes(pc));
+
+        if (isPromo) {
+            // Activate Promo Mode
+            promoShipping.classList.remove('hidden');
+            promoShipping.classList.add('flex');
+            standardShipping.classList.add('hidden');
+            selfShipping.classList.add('hidden');
+            
+            // Auto Select Promo
+            promoShipping.querySelector('input').disabled = false;
+            promoShipping.querySelector('input').checked = true;
+            
+            updateShipping(0);
+        } else {
+            // Standard Mode
+            promoShipping.classList.add('hidden');
+            promoShipping.classList.remove('flex');
+            standardShipping.classList.remove('hidden');
+            selfShipping.classList.remove('hidden');
+            
+            // Disable promo input to avoid form submit issues
+            promoShipping.querySelector('input').disabled = true;
+            
+            // Revert to selected radio
+            const selected = document.querySelector('input[name="shipping_option"]:not([value="promo"]):checked');
+            if (selected) {
+                 updateShipping(selected.value === 'standard' ? 15000 : 0);
+            } else {
+                 // Default to standard
+                 document.querySelector('input[value="standard"]').checked = true;
+                 updateShipping(15000);
+            }
+        }
+    }
+
+    // Expose validation function to global scope if needed, or just attach event
+    if (cityInput) {
+        cityInput.addEventListener('input', checkPromoCity);
+        cityInput.addEventListener('change', checkPromoCity);
+        // Check initially
+        setTimeout(checkPromoCity, 500); 
+    }
+
+    // Make function global so radio buttons can call it
+    window.updateShipping = function(cost) {
+        currentShippingCost = cost;
+        if (shippingCostEl) {
+            shippingCostEl.textContent = cost === 0 ? 'Gratis' : 'Rp ' + cost.toLocaleString('id-ID');
+        }
+        updateTotal();
+    };
+
+    function updateTotal() {
+        // Parse Subtotal (Remove Rp and dots)
+        const subtotalText = document.getElementById('subtotal-display').textContent;
+        const subtotal = parseInt(subtotalText.replace(/[^0-9]/g, '')) || 0;
+        
+        // Parse Discount
+        const discountText = discountDisplay.textContent;
+        const discount = parseInt(discountText.replace(/[^0-9]/g, '')) || 0;
+
+        const total = subtotal - discount + currentShippingCost;
+        totalDisplay.textContent = 'Rp ' + total.toLocaleString('id-ID');
+    }
+
+    // Initial check
+    checkPromoCity();
 });
 </script>
 

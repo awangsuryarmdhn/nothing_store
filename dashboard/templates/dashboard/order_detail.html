@@ -70,6 +70,41 @@
             </div>
         </div>
 
+        <!-- Shipping & Tracking -->
+        <div class="glass-panel p-6 rounded-2xl">
+            <h3 class="text-sm font-bold text-gray-500 uppercase mb-4 tracking-widest">Pengiriman (Resi)</h3>
+            <div class="space-y-4">
+                <div>
+                    <span class="text-xs text-gray-500 block">Metode Pengiriman</span>
+                    <span class="text-white font-medium">{{ order.shipping_option|default:"Standard" }}</span>
+                    <span class="text-gray-400 text-xs ml-2">(Rp {{ order.shipping_cost|intcomma }})</span>
+                </div>
+                
+                <form method="post" class="pt-2">
+                    {% csrf_token %}
+                    <label class="text-xs text-gray-500 block mb-2">Input Nomor Resi</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="tracking_number" value="{{ order.tracking_number|default:'' }}" 
+                               placeholder="Contoh: JP12345678"
+                               class="flex-1 bg-black/50 border border-brand-gray rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white">
+                        <button type="submit" class="bg-white text-black px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
+                
+                {% if order.shipped_date %}
+                <div class="bg-green-500/10 border border-green-500/20 p-3 rounded-lg flex items-center gap-3">
+                    <i class="ri-truck-line text-green-400 text-xl"></i>
+                    <div>
+                        <p class="text-green-400 text-sm font-bold">Produk Dikirim</p>
+                        <p class="text-xs text-gray-400">{{ order.shipped_date|date:"d M Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- Customer Info -->
         <div class="glass-panel p-6 rounded-2xl">
             <h3 class="text-sm font-bold text-gray-500 uppercase mb-4 tracking-widest">Informasi Pelanggan</h3>

@@ -407,9 +407,21 @@ def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     
     if request.method == 'POST':
-        new_status = request.POST.get('status')
-        if new_status in dict(Order.STATUS_CHOICES):
-            order.status = new_status
+        # Handle Status Update
+        if 'status' in request.POST:
+            new_status = request.POST.get('status')
+            if new_status in dict(Order.STATUS_CHOICES):
+                order.status = new_status
+                order.save()
+                return redirect('dashboard:order_detail', order_id=order.id)
+        
+        # Handle Tracking Number Update
+        if 'tracking_number' in request.POST:
+            tracking_number = request.POST.get('tracking_number')
+            order.tracking_number = tracking_number
+            if tracking_number and not order.shipped_date:
+                from django.utils import timezone
+                order.shipped_date = timezone.now()
             order.save()
             return redirect('dashboard:order_detail', order_id=order.id)
             
