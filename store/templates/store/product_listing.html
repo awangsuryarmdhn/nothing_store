@@ -98,7 +98,7 @@
                     <div class="relative w-full aspect-[3/4] overflow-hidden bg-gray-100 mb-4 shadow-sm border border-gray-100">
                         {% with image=product.main_image %}
                             {% if image %}
-                                <img src="{{ image.image.url }}" 
+                                <img src="{{ image.image_thumbnail.url }}" 
                                      alt="{{ product.name }}" 
                                      class="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                                      loading="lazy">
