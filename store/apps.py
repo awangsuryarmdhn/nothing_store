@@ -7,8 +7,19 @@ class StoreConfig(AppConfig):
 
     def ready(self):
         import store.signals
+        import os
+        from django.core.management import call_command
         
-        # Auto-fix variant sizes on startup (for Vercel where migrations don't run easily)
+        # Auto-migrate on Vercel startup
+        # This ensures database is up to date even if build command fails
+        if os.environ.get('VERCEL') and not os.environ.get('BUILD_PHASE'):
+            try:
+                print("Running auto-migrate...")
+                call_command('migrate', interactive=False)
+            except Exception as e:
+                print(f"Auto-migrate failed: {e}")
+
+        # Auto-fix variant sizes
         self._fix_variant_sizes()
     
     def _fix_variant_sizes(self):
