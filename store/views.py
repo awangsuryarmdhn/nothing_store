@@ -373,11 +373,19 @@ def retry_payment_view(request, order_id):
         messages.info(request, "Pesanan ini sudah dibayar.")
         return redirect('store:account_dashboard')
     
-    snap_token = create_snap_transaction(order)
+    # Cek apakah token sudah ada dan valid (kecuali dipaksa renew)
+    renew = request.GET.get('renew') == 'true'
+    
+    if order.midtrans_snap_token and not renew:
+        snap_token = order.midtrans_snap_token
+    else:
+        snap_token = create_snap_transaction(order)
+        if snap_token:
+            order.midtrans_snap_token = snap_token
+            order.save()
+            
     if snap_token:
-        order.midtrans_snap_token = snap_token
-        order.save()
-        request.session['order_id'] = order.id  # Store for confirmation page
+        request.session['order_id'] = order.id
         return render(request, 'store/payment.html', {
             'order': order,
             'snap_token': snap_token,

@@ -118,6 +118,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                     </svg>
                 </button>
+                
+                <div class="mt-4 text-center">
+                    <a href="{% url 'store:retry_payment' order.id %}?renew=true" class="text-[10px] text-zinc-600 hover:text-white uppercase tracking-widest transition-colors cursor-pointer border-b border-zinc-800 hover:border-white pb-0.5">
+                        Link Error/Expired? Buat Baru
+                    </a>
+                </div>
             </div>
             
             <!-- Footer -->
