@@ -10,6 +10,7 @@
             }
         }
     ],
+    "buildCommand": "python manage.py migrate --noinput",
     "routes": [
         {
             "src": "/(.*)",
