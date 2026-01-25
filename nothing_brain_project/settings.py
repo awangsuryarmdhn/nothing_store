@@ -227,13 +227,13 @@ else:
 
 
 # ==============================================================================
-# 13. CACHING (Database Cache)
+# 13. CACHING (LocMemCache - Safer for Vercel)
 # ==============================================================================
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'nothing_brain_cache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
 
@@ -251,9 +251,9 @@ LOGOUT_REDIRECT_URL = 'store:landing_page'
 CART_SESSION_ID = 'cart'
 
 # WhiteNoise Storage (Compression + Caching)
-# Gunakan CompressedManifestStaticFilesStorage untuk hash filenames (Cache Forever)
+# Gunakan CompressedStaticFilesStorage agar tidak error 500 jika ada file yang hilang
 if not DEBUG:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 
 # ==============================================================================
