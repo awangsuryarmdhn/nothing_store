@@ -411,7 +411,10 @@ def retry_payment_view(request, order_id):
 def midtrans_webhook(request):
     if request.method == 'POST':
         try:
+            print(">>> MIDTRANS WEBHOOK RECEIVED <<<")
             data = json.loads(request.body)
+            print(f"Payload: {json.dumps(data, indent=2)}")
+            
             midtrans_order_id = data.get('order_id')
             transaction_status = data.get('transaction_status')
             fraud_status = data.get('fraud_status')
@@ -424,36 +427,52 @@ def midtrans_webhook(request):
             input_string = f"{midtrans_order_id}{status_code}{gross_amount}{server_key}"
             hashed_input = hashlib.sha512(input_string.encode()).hexdigest()
 
+            print(f"Checking Signature for Order ID: {midtrans_order_id}")
             if hashed_input != signature_key:
+                print("!!! INVALID SIGNATURE !!!")
+                print(f"Expected: {hashed_input}")
+                print(f"Received: {signature_key}")
                 return HttpResponse("Invalid Signature", status=403)
 
             if midtrans_order_id.startswith('payment_notif_test'):
                 return HttpResponse(status=200)
 
             # 2. Update Order
-            # Handle format: Just ID (e.g. "105") or Old Format "105-xxxx"
             try:
                 if '-' in midtrans_order_id:
                      original_order_id = int(midtrans_order_id.split('-')[0])
                 else:
                      original_order_id = int(midtrans_order_id)
             except ValueError:
+                 print(f"!!! INVALID ORDER ID FORMAT: {midtrans_order_id} !!!")
                  return HttpResponse("Invalid Order ID Format", status=400)
-            order = Order.objects.get(id=original_order_id)
+            
+            try:
+                order = Order.objects.get(id=original_order_id)
+            except Order.DoesNotExist:
+                print(f"!!! ORDER NOT FOUND: {original_order_id} !!!")
+                return HttpResponse("Order Not Found", status=404)
 
+            print(f"Processing Order #{original_order_id}, Current Status: {order.status}")
+            
             if order.status == 'paid':
+                print("Order already paid. Skipping.")
                 return HttpResponse("Order already paid", status=200)
 
             # Logic Status Midtrans
             is_paid = False
             if transaction_status == 'capture':
                 if fraud_status == 'challenge':
+                    print("Status: Challenge")
                     return HttpResponse("Challenged", status=200)
                 elif fraud_status == 'accept':
+                    print("Status: Capture/Accept -> MARK PAID")
                     is_paid = True
             elif transaction_status == 'settlement':
+                print("Status: Settlement -> MARK PAID")
                 is_paid = True
             elif transaction_status in ['cancel', 'deny', 'expire']:
+                print(f"Status: {transaction_status} -> MARK FAILED")
                 order.status = 'failed'
                 order.save()
                 return HttpResponse("Order cancelled", status=200)
@@ -462,6 +481,7 @@ def midtrans_webhook(request):
                 with transaction.atomic():
                     order.status = 'paid'
                     order.save()
+                    print("Order Saved as PAID.")
                     
                     # Kurangi Stok
                     for item in order.items.all():
@@ -474,15 +494,17 @@ def midtrans_webhook(request):
                         send_low_stock_email(item.variant)
                 
                 # Kirim Email
+                print("Sending success emails...")
                 _send_success_emails(order)
                 return HttpResponse("Order paid", status=200)
 
+            print(f"Status unhandled: {transaction_status}")
             return HttpResponse("OK", status=200)
         
-        except Order.DoesNotExist:
-            return HttpResponse("Order Not Found", status=404)
         except Exception as e:
-            print(f"Webhook Error: {e}")
+            print(f"!!! WEBHOOK FATAL ERROR: {e} !!!")
+            import traceback
+            traceback.print_exc()
             return HttpResponse("Error", status=400)
             
     return HttpResponse(status=400)
