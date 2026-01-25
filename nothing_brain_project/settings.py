@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==============================================================================
 
 # SECRET_KEY diambil dari file .env
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-fallback-key-for-dev-only')
 
 # DEBUG mode (True untuk Development, False untuk Production)
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -227,6 +227,17 @@ else:
 
 
 # ==============================================================================
+# 13. CACHING (Database Cache)
+# ==============================================================================
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'nothing_brain_cache',
+    }
+}
+
+# ==============================================================================
 # 10. DEFAULT SETTINGS
 # ==============================================================================
 
@@ -238,6 +249,12 @@ LOGOUT_REDIRECT_URL = 'store:landing_page'
 
 # Session ID untuk Keranjang
 CART_SESSION_ID = 'cart'
+
+# WhiteNoise Storage (Compression + Caching)
+# Gunakan CompressedManifestStaticFilesStorage untuk hash filenames (Cache Forever)
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # ==============================================================================
 # 12. EMAIL CONFIGURATION

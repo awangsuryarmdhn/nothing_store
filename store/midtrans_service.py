@@ -33,8 +33,15 @@ def create_snap_transaction(order):
             'name': 'Biaya Pengiriman'
         })
 
-    # Generate Midtrans Order ID (simpan untuk lookup status nanti)
-    midtrans_order_id = f"{order.id}-{uuid.uuid4().hex[:6]}"
+    # Generate Midtrans Order ID (Deterministic)
+    # Use existing midtrans_order_id if available (for retries), otherwise generate new one based on DB ID
+    if order.midtrans_order_id:
+        midtrans_order_id = order.midtrans_order_id
+    else:
+        # Format: JUST THE ID (or prefix if needed, but user requested same as order id)
+        # Note: Midtrans requires unique IDs. If a transaction fails, we might need a suffix for retry if we can't reuse token.
+        # But per request "order id di modtrans jangan berbeda", we try to stick to ID.
+        midtrans_order_id = str(order.id)
     
     # Siapkan parameter transaksi
     transaction_details = {

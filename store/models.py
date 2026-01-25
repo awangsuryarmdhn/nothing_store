@@ -142,6 +142,9 @@ class Product(models.Model):
         ordering = ('name',)
         indexes = [
             models.Index(fields=['id', 'slug']),
+            models.Index(fields=['available']),          # For availability filter
+            models.Index(fields=['available', 'price']), # For price sorting
+            models.Index(fields=['available', 'created']), # For new arrivals
         ]
         verbose_name = 'produk'
         verbose_name_plural = 'produk'

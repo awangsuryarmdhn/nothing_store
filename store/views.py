@@ -23,10 +23,13 @@ from .midtrans_service import create_snap_transaction
 from .services.email_service import * 
 from .services.notification_service import send_payment_notification_to_admin
 
+from django.views.decorators.cache import cache_page
+
 # ==============================================================================
 # 1. CORE & LANDING PAGE
 # ==============================================================================
 
+@cache_page(60 * 15) # Cache 15 Menit
 def landing_page_view(request):
     # Optimasi: prefetch_related agar gambar varian tidak query berulang
     featured_products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images').order_by('-created')[:4]
@@ -56,6 +59,7 @@ def about_us_view(request):
 # 2. PRODUK & KATALOG
 # ==============================================================================
 
+@cache_page(60 * 5) # Cache 5 Menit
 def product_list(request, category_slug=None): 
     categories = Category.objects.all()
     products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images')
@@ -258,12 +262,21 @@ def order_create(request):
                     quantity=item['quantity']
                 )
             
+
+            # Generate Midtrans Order ID PRE-EXECUTION (Request User: generate dulu sebelum eksekusi)
+            # Kita set ID sama dengan Order ID DB
+            order.midtrans_order_id = str(order.id)
+            order.save()
+
             # Generate Midtrans Token
             snap_token, midtrans_order_id = create_snap_transaction(order)
+            
             if snap_token:
                 order.midtrans_snap_token = snap_token
-                order.midtrans_order_id = midtrans_order_id
+                # midtrans_order_id should be same as order.midtrans_order_id but we update just in case
+                order.midtrans_order_id = midtrans_order_id 
                 order.save()
+                
                 cart.clear()
                 request.session['order_id'] = order.id  # Store for confirmation page
                 return render(request, 'store/payment.html', {
@@ -418,7 +431,14 @@ def midtrans_webhook(request):
                 return HttpResponse(status=200)
 
             # 2. Update Order
-            original_order_id = int(midtrans_order_id.split('-')[0])
+            # Handle format: Just ID (e.g. "105") or Old Format "105-xxxx"
+            try:
+                if '-' in midtrans_order_id:
+                     original_order_id = int(midtrans_order_id.split('-')[0])
+                else:
+                     original_order_id = int(midtrans_order_id)
+            except ValueError:
+                 return HttpResponse("Invalid Order ID Format", status=400)
             order = Order.objects.get(id=original_order_id)
 
             if order.status == 'paid':
