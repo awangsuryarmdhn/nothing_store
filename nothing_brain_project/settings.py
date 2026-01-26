@@ -244,6 +244,7 @@ CACHES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout Redirect
+LOGIN_URL = 'store:login'
 LOGIN_REDIRECT_URL = 'store:landing_page'
 LOGOUT_REDIRECT_URL = 'store:landing_page'
 
