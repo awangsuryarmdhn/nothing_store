@@ -77,6 +77,9 @@ MIDDLEWARE = [
     # WAJIB: Whitenoise untuk file statis di Production
     'whitenoise.middleware.WhiteNoiseMiddleware',
     
+    # Kompresi Gzip untuk memperkecil ukuran respons HTML/JSON
+    'django.middleware.gzip.GZipMiddleware',
+    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -128,6 +131,7 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST'),
         'PORT': config('DB_PORT', cast=int),
+        'CONN_MAX_AGE': 600,  # Persist connection for 10 minutes
         'OPTIONS': {
             'options': '-c search_path=public',
         },
