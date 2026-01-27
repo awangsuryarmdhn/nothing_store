@@ -40,7 +40,8 @@
     <div class="absolute inset-0 z-0">
         <img src="{% if content.hero_image %}{{ content.hero_image.url }}{% else %}https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070{% endif %}" 
              class="w-full h-full object-cover opacity-60 transition-transform duration-[2s] ease-in-out group-hover:scale-105" 
-             alt="Hero Campaign">
+             alt="Hero Campaign"
+             fetchpriority="high" loading="eager">
         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
     </div>
 
