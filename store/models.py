@@ -61,6 +61,22 @@ class LandingPageContent(models.Model):
 
 class LookbookImage(models.Model):
     image = models.ImageField("Gambar Lookbook", upload_to='lookbook/')
+    
+    # Optimized Specs
+    image_medium = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(600, 800)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+
+    image_thumbnail = ImageSpecField(
+        source='image',
+        processors=[ResizeToFill(300, 400)],
+        format='WEBP',
+        options={'quality': 80}
+    )
+
     order = models.PositiveIntegerField("Urutan", default=0, help_text="Urutan kecil tampil duluan.")
 
     class Meta:

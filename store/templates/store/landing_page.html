@@ -209,7 +209,7 @@
         <div class="columns-2 md:columns-4 gap-4 space-y-4">
             {% for item in lookbook_images %}
                 <div class="break-inside-avoid relative group overflow-hidden rounded-none border border-gray-800">
-                    <img src="{{ item.image.url }}" 
+                    <img src="{{ item.image_medium.url }}" 
                          class="w-full h-auto object-cover grayscale group-hover:grayscale-0 transition-all duration-700 hover:scale-110" 
                          loading="lazy" 
                          alt="Lookbook">

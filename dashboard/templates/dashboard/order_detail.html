@@ -16,7 +16,7 @@
                 <div class="flex items-center gap-4 border-b border-brand-gray/50 pb-4 last:border-0 last:pb-0">
                     <div class="w-16 h-16 bg-gray-800 rounded-lg overflow-hidden">
                         {% if item.product.main_image %}
-                        <img src="{{ item.product.main_image.image.url }}" class="w-full h-full object-cover">
+                        <img src="{{ item.product.main_image.image_thumbnail.url }}" class="w-full h-full object-cover">
                         {% endif %}
                     </div>
                     <div class="flex-1">
