@@ -187,15 +187,22 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise Configuration for Vercel (read-only filesystem)
-# This allows WhiteNoise to serve files directly without requiring collectstatic
+# WhiteNoise Configuration for Vercel/Heroku
+# This allows WhiteNoise to serve files directly with compression and long-term caching
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True
+
+# Enable compression and caching (hashing filenames)
+# Use 'whitenoise.storage.CompressedManifestStaticFilesStorage' for max performance
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Allow missing files (e.g. if some vendor files are not found) to prevent 500 error
+WHITENOISE_MANIFEST_STRICT = False
 
 # Tailwind Config
 # Set True untuk menggunakan CDN (Aman untuk Vercel jika NPM gagal)
 # Set False jika menggunakan local build 'static/css/output.css'
-USE_TAILWIND_CDN = config('USE_TAILWIND_CDN', default=True, cast=bool)
+USE_TAILWIND_CDN = False
 
 
 # ==============================================================================
