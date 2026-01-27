@@ -129,13 +129,30 @@ import dj_database_url
 # 5. DATABASE (SUPABASE / POSTGRESQL)
 # ==============================================================================
 
-DATABASES = {
-    'default': config(
-        'DATABASE_URL',
-        default=f"postgres://{config('DB_USER')}:{config('DB_PASSWORD')}@{config('DB_HOST')}:{config('DB_PORT')}/{config('DB_NAME')}",
-        cast=dj_database_url.parse
-    )
-}
+# Check for DATABASE_URL in environment (Heroku)
+if config('DATABASE_URL', default=None):
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Local fallback
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST'),
+            'PORT': config('DB_PORT', cast=int),
+            'CONN_MAX_AGE': 600,  # Persist connection for 10 minutes
+            'OPTIONS': {
+                'options': '-c search_path=public',
+            },
+        }
+    }
 
 
 # ==============================================================================
