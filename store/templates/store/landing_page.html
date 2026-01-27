@@ -38,10 +38,22 @@
 <section class="relative w-full h-[85vh] lg:h-[90vh] bg-black overflow-hidden group">
     
     <div class="absolute inset-0 z-0">
-        <img src="{% if content.hero_image %}{{ content.hero_image.url }}{% else %}https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070{% endif %}" 
+        {% if content.hero_image %}
+        <picture>
+            <source media="(max-width: 768px)" srcset="{{ content.hero_image_mobile.url }}">
+            <source media="(min-width: 769px)" srcset="{{ content.hero_image_desktop.url }}">
+            <img src="{{ content.hero_image_desktop.url }}" 
+                 class="w-full h-full object-cover opacity-60 transition-transform duration-[2s] ease-in-out group-hover:scale-105" 
+                 alt="Hero Campaign"
+                 width="1920" height="1080"
+                 fetchpriority="high" loading="eager" decoding="sync">
+        </picture>
+        {% else %}
+        <img src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070" 
              class="w-full h-full object-cover opacity-60 transition-transform duration-[2s] ease-in-out group-hover:scale-105" 
              alt="Hero Campaign"
              fetchpriority="high" loading="eager">
+        {% endif %}
         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
     </div>
 

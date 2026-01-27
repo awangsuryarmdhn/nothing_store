@@ -36,6 +36,20 @@ class LandingPageContent(models.Model):
     hero_title = models.CharField("Judul Hero", max_length=100, default="BEYOND THE NOISE")
     hero_subtitle = models.CharField("Subjudul Hero", max_length=200, default="Gaya adalah pemberontakan. Temukan identitas Anda.")
     hero_image = models.ImageField("Gambar Latar Hero", upload_to='landing_page/')
+    
+    # Optimized Hero Images
+    hero_image_desktop = ImageSpecField(
+        source='hero_image',
+        processors=[ResizeToFill(1920, 1080)],
+        format='WEBP',
+        options={'quality': 85}
+    )
+    hero_image_mobile = ImageSpecField(
+        source='hero_image',
+        processors=[ResizeToFill(800, 1000)], # Portrait for mobile
+        format='WEBP',
+        options={'quality': 80}
+    )
 
     class Meta:
         verbose_name = "Konten Landing Page"

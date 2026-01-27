@@ -100,8 +100,9 @@
                             {% if image %}
                                 <img src="{{ image.image_thumbnail.url }}" 
                                      alt="{{ product.name }}" 
+                                     width="400" height="500"
                                      class="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
-                                     {% if forloop.counter <= 4 %}fetchpriority="high" loading="eager"{% else %}loading="lazy"{% endif %}>
+                                     {% if forloop.counter <= 4 %}fetchpriority="high" loading="eager" decoding="sync"{% else %}loading="lazy" decoding="async"{% endif %}>
                             {% else %}
                                 <div class="flex items-center justify-center w-full h-full text-gray-300 bg-gray-50 font-display tracking-widest text-xs">NO IMAGE</div>
                             {% endif %}

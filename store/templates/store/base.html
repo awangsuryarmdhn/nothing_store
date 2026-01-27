@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Nothing Brain | Mindless Hardware{% endblock %}</title>
 
+    {% if MEDIA_URL %}
+    <link rel="preconnect" href="{{ MEDIA_URL }}" crossorigin>
+    <link rel="dns-prefetch" href="{{ MEDIA_URL }}">
+    {% endif %}
+
     <!-- DNS Prefetch & Preconnect for faster CDN loading -->
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
