@@ -27,6 +27,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     '.vercel.app',
+    '.herokuapp.com',
     'nothingbrain.store',
     '.nothingbrain.store',
     config('NGROK_HOSTNAME', default=''),
@@ -37,6 +38,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.ngrok-free.dev",
     "https://nothingbrain.store",
     "https://*.vercel.app",
+    "https://*.herokuapp.com",
 ]
 if config('NGROK_HOSTNAME', default=''):
     CSRF_TRUSTED_ORIGINS.append(f"https://{config('NGROK_HOSTNAME')}")
