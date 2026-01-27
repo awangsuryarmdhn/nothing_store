@@ -31,6 +31,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+    <!-- NProgress (Loading Bar) -->
+    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css" />
+    
     <style>
         /* Custom Utilities */
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
@@ -45,10 +49,15 @@
         
         /* Smooth Scrolling */
         html { scroll-behavior: smooth; }
+
+        /* NProgress Customization */
+        #nprogress .bar { background: #000 !important; height: 3px !important; }
+        #nprogress .peg { box-shadow: 0 0 10px #000, 0 0 5px #000 !important; }
+        #nprogress .spinner { display: none !important; }
     </style>
 </head>
 
-<body class="bg-base-100 min-h-screen flex flex-col selection:bg-black selection:text-white">
+<body class="bg-base-100 min-h-screen flex flex-col selection:bg-black selection:text-white" hx-boost="true">
 
     <div class="drawer">
         <input id="nb_drawer" type="checkbox" class="drawer-toggle" />
@@ -266,6 +275,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             lucide.createIcons();
         });
+        
+        // Re-initialize icons/scripts after HTMX swap
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            lucide.createIcons();
+            window.scrollTo(0, 0); // Scroll top on nav
+        });
+
+        // NProgress Hooks
+        document.addEventListener('htmx:configRequest', function() { NProgress.start(); });
+        document.addEventListener('htmx:afterRequest', function() { NProgress.done(); });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

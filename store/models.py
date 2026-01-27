@@ -208,7 +208,7 @@ class ProductImage(models.Model):
         source='image',
         processors=[ResizeToFill(400, 500)],
         format='WEBP',
-        options={'quality': 80}
+        options={'quality': 70}
     )
     
     # Medium untuk detail page (800x1000)
@@ -216,7 +216,7 @@ class ProductImage(models.Model):
         source='image',
         processors=[ResizeToFit(800, 1000)],
         format='WEBP',
-        options={'quality': 85}
+        options={'quality': 75}
     )
 
     class Meta:
