@@ -171,6 +171,10 @@ class Product(models.Model):
 
     @property
     def main_image(self):
+        # Optimization: Use prefetched objects if available to allow avoiding N+1 queries
+        if hasattr(self, '_prefetched_objects_cache') and 'images' in self._prefetched_objects_cache:
+            images = self.images.all() # This uses the cache
+            return images[0] if len(images) > 0 else None
         return self.images.first()
 
     @property

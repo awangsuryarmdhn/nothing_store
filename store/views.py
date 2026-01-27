@@ -32,7 +32,7 @@ from django.views.decorators.cache import cache_page
 @cache_page(60 * 15) # Cache 15 Menit
 def landing_page_view(request):
     # Optimasi: prefetch_related agar gambar varian tidak query berulang
-    featured_products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images').order_by('-created')[:4]
+    featured_products = Product.objects.filter(available=True).select_related('category').prefetch_related('images').order_by('-created')[:4]
     content = LandingPageContent.objects.first()
     
     all_featured_collections = list(FeaturedCollection.objects.all()[:3])
@@ -62,7 +62,7 @@ def about_us_view(request):
 @cache_page(60 * 5) # Cache 5 Menit
 def product_list(request, category_slug=None): 
     categories = Category.objects.all()
-    products = Product.objects.filter(available=True).select_related('category').prefetch_related('variants', 'images')
+    products = Product.objects.filter(available=True).select_related('category').prefetch_related('images')
 
     # Ambil parameter search & sort dari URL Query (?search=...)
     search = request.GET.get("search", "")
