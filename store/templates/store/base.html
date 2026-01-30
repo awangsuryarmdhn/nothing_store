@@ -59,7 +59,7 @@
                     
                     <div class="navbar-start">
                         <label for="nb_drawer" class="btn btn-ghost btn-circle lg:hidden hover:bg-gray-100">
-                            <i data-lucide="menu" class="w-6 h-6"></i>
+                            {% include 'store/partials/icons.html' with icon='menu' class='w-6 h-6' %}
                         </label>
                         
                         <a href="{% url 'store:landing_page' %}" class="btn btn-ghost text-2xl md:text-3xl font-display tracking-tighter hover:bg-transparent px-2">
@@ -78,13 +78,13 @@
                     <div class="navbar-end gap-1 md:gap-2">
                         
                         <button class="btn btn-ghost btn-circle hover:bg-gray-100 hidden sm:flex">
-                            <i data-lucide="search" class="w-5 h-5"></i>
+                            {% include 'store/partials/icons.html' with icon='search' class='w-5 h-5' %}
                         </button>
 
                         <div class="dropdown dropdown-end">
                             <div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-gray-100 group">
                                 <div class="indicator">
-                                    <i data-lucide="shopping-bag" class="w-5 h-5 group-hover:text-black transition-colors"></i>
+                                    {% include 'store/partials/icons.html' with icon='shopping-bag' class='w-5 h-5 group-hover:text-black transition-colors' %}
                                     {% if cart|length > 0 %}
                                         <span class="badge badge-primary badge-xs indicator-item rounded-full border-none">{{ cart|length }}</span>
                                     {% endif %}
@@ -111,8 +111,8 @@
                                     <img src="{{ user.profile.avatar_url }}" alt="{{ user.username }}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}'">
                                 </div>
                                 {% else %}
-                                <div class="bg-black text-white rounded-full w-8 transition-transform hover:scale-105">
-                                    <i data-lucide="user" class="w-4 h-4"></i>
+                                <div class="bg-black text-white rounded-full w-8 h-8 flex items-center justify-center transition-transform hover:scale-105">
+                                    {% include 'store/partials/icons.html' with icon='user' class='w-4 h-4' %}
                                 </div>
                                 {% endif %}
                             </div>
@@ -166,7 +166,7 @@
                             </p>
 
                             <div class="flex items-center gap-2 text-xs text-gray-500 font-mono uppercase tracking-wide pt-2">
-                                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                {% include 'store/partials/icons.html' with icon='map-pin' class='w-3 h-3' %}
                                 Singkawang <span class="text-white">🔁</span> Semarang
                             </div>
                         </div>
@@ -186,21 +186,21 @@
                             <div class="flex flex-col gap-4">
                                 <a href="https://www.instagram.com/nothing_brain/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 group">
                                     <div class="w-8 h-8 border border-gray-700 rounded-full flex items-center justify-center group-hover:border-white group-hover:bg-white group-hover:text-black transition-all">
-                                        <i data-lucide="instagram" class="w-4 h-4"></i>
+                                        {% include 'store/partials/icons.html' with icon='instagram' class='w-4 h-4' %}
                                     </div>
                                     <span class="text-sm text-gray-300 group-hover:text-white transition-colors">@nothing_brain</span>
                                 </a>
 
                                 <a href="https://www.facebook.com/taufiknothingbrain" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 group">
                                     <div class="w-8 h-8 border border-gray-700 rounded-full flex items-center justify-center group-hover:border-white group-hover:bg-white group-hover:text-black transition-all">
-                                        <i data-lucide="facebook" class="w-4 h-4"></i>
+                                        {% include 'store/partials/icons.html' with icon='facebook' class='w-4 h-4' %}
                                     </div>
                                     <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Nothing Brain</span>
                                 </a>
 
                                 <a href="https://shopee.co.id/muhammad_taufik15" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 group">
                                     <div class="w-8 h-8 border border-orange-500/50 text-orange-500 rounded-full flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all">
-                                        <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                                        {% include 'store/partials/icons.html' with icon='shopping-bag' class='w-4 h-4' %}
                                     </div>
                                     <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Official Store (Shopee)</span>
                                 </a>
@@ -229,7 +229,7 @@
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                     <span class="font-display text-2xl tracking-tighter">NB MENU</span>
                     <label for="nb_drawer" class="btn btn-ghost btn-circle btn-sm">
-                        <i data-lucide="x" class="w-5 h-5"></i>
+                        {% include 'store/partials/icons.html' with icon='x' class='w-5 h-5' %}
                     </label>
                 </div>
                 
