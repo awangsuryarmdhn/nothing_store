@@ -30,6 +30,8 @@ ALLOWED_HOSTS = [
     '.herokuapp.com',
     'nothingbrain.store',
     '.nothingbrain.store',
+    '.nothingbrain.biz.id',
+    '.nothingbrain.biz.id',
     config('NGROK_HOSTNAME', default=''),
 ]
 
