@@ -38,15 +38,17 @@
 <section class="relative w-full h-[85vh] lg:h-[90vh] bg-black overflow-hidden group">
     
     <div class="absolute inset-0 z-0">
-        {% if content.hero_image %}
+        {% if content and content.hero_image and content.hero_image.name %}
+        {# Try to use optimized images, fall back to original or placeholder if file missing #}
         <picture>
-            <source media="(max-width: 768px)" srcset="{{ content.hero_image_mobile.url }}">
-            <source media="(min-width: 769px)" srcset="{{ content.hero_image_desktop.url }}">
-            <img src="{{ content.hero_image_desktop.url }}" 
+            <source media="(max-width: 768px)" srcset="{{ content.hero_image.url }}">
+            <source media="(min-width: 769px)" srcset="{{ content.hero_image.url }}">
+            <img src="{{ content.hero_image.url }}" 
                  class="w-full h-full object-cover opacity-60 transition-transform duration-[2s] ease-in-out group-hover:scale-105" 
                  alt="Hero Campaign"
                  width="1920" height="1080"
-                 fetchpriority="high" loading="eager" decoding="sync">
+                 fetchpriority="high" loading="eager" decoding="sync"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070';">
         </picture>
         {% else %}
         <img src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=2070" 

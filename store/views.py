@@ -35,11 +35,28 @@ def landing_page_view(request):
     featured_products = Product.objects.filter(available=True).select_related('category').prefetch_related('images').order_by('-created')[:4]
     content = LandingPageContent.objects.first()
     
+    # Validate hero_image file exists (prevent crash if S3 file missing)
+    if content and content.hero_image:
+        try:
+            # Try to check if file exists in storage
+            if not content.hero_image.storage.exists(content.hero_image.name):
+                content.hero_image = None  # Clear invalid reference
+        except Exception:
+            content.hero_image = None  # Clear if any error accessing storage
+    
     all_featured_collections = list(FeaturedCollection.objects.all()[:3])
     main_collection = all_featured_collections[0] if all_featured_collections else None
     side_collections = all_featured_collections[1:] if len(all_featured_collections) > 1 else None
     
-    lookbook_images = LookbookImage.objects.all()[:5]
+    # Filter lookbook images - only include those with valid files
+    all_lookbook = LookbookImage.objects.all()[:5]
+    lookbook_images = []
+    for item in all_lookbook:
+        try:
+            if item.image and item.image.storage.exists(item.image.name):
+                lookbook_images.append(item)
+        except Exception:
+            pass  # Skip images with missing files
     
     context = {
         'featured_products': featured_products,
