@@ -15,14 +15,8 @@
     <link rel="dns-prefetch" href="{{ MEDIA_URL }}">
     {% endif %}
 
-    <!-- Critical CSS (DaisyUI) - Merged into output.css -->
-    <!-- Tailwind CSS -->
-    {% if USE_TAILWIND_CDN %}
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
-    {% else %}
-        <link rel="stylesheet" href="{% static 'css/output.css' %}">
-    {% endif %}
+    <!-- Tailwind CSS + DaisyUI (compiled) -->
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
     <script src="{% static 'js/lucide.min.js' %}" defer></script>
     <script src="{% static 'js/htmx.min.js' %}" defer></script>
@@ -34,27 +28,6 @@
     <!-- NProgress (Loading Bar) -->
     <script src="{% static 'js/nprogress.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/nprogress.css' %}" />
-    
-    <style>
-        /* Custom Utilities */
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        .font-display { font-family: 'Archivo Black', sans-serif; text-transform: uppercase; letter-spacing: -0.05em; }
-        
-        /* Brand Colors Override */
-        .btn-primary { @apply bg-black border-black text-white hover:bg-zinc-800 hover:border-zinc-800 transition-all duration-300; }
-        .badge-primary { @apply bg-black border-black text-white; }
-        
-        /* Utilitas Tampilan */
-        [x-cloak] { display: none !important; }
-        
-        /* Smooth Scrolling */
-        html { scroll-behavior: smooth; }
-
-        /* NProgress Customization */
-        #nprogress .bar { background: #000 !important; height: 3px !important; }
-        #nprogress .peg { box-shadow: 0 0 10px #000, 0 0 5px #000 !important; }
-        #nprogress .spinner { display: none !important; }
-    </style>
 </head>
 
 <body class="bg-base-100 min-h-screen flex flex-col selection:bg-black selection:text-white" hx-boost="true">

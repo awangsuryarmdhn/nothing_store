@@ -9,33 +9,8 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS Logic -->
-    {% if USE_TAILWIND_CDN %}
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            sans: ['Outfit', 'sans-serif'],
-                        },
-                        colors: {
-                            brand: {
-                                black: '#0a0a0a',
-                                dark: '#1a1a1a',
-                                gray: '#2a2a2a',
-                                accent: '#ffffff',
-                            }
-                        }
-                    }
-                }
-            }
-        </script>
-    {% else %}
-        <!-- Local Build (Future Proofing) -->
-        <link rel="stylesheet" href="{% static 'css/output.css' %}">
-    {% endif %}
-
+    <!-- Tailwind CSS + DaisyUI (compiled) -->
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
     <!-- Alpine.js -->

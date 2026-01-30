@@ -1,3 +1,48 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS v4 + DaisyUI v5 */
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: lofi --default;
+}
+
+/* Custom Utilities */
+@layer base {
+  body { 
+    font-family: 'Inter', sans-serif; 
+    -webkit-font-smoothing: antialiased; 
+  }
+  .font-display { 
+    font-family: 'Archivo Black', sans-serif; 
+    text-transform: uppercase; 
+    letter-spacing: -0.05em; 
+  }
+  
+  /* Smooth Scrolling */
+  html { scroll-behavior: smooth; }
+  
+  /* x-cloak for Alpine.js */
+  [x-cloak] { display: none !important; }
+}
+
+@layer components {
+  /* Brand Colors Override for Buttons */
+  .btn-primary { 
+    @apply bg-black border-black text-white hover:bg-zinc-800 hover:border-zinc-800 transition-all duration-300; 
+  }
+  .badge-primary { 
+    @apply bg-black border-black text-white; 
+  }
+}
+
+@layer utilities {
+  /* NProgress Customization */
+  #nprogress .bar { 
+    background: #000 !important; 
+    height: 3px !important; 
+  }
+  #nprogress .peg { 
+    box-shadow: 0 0 10px #000, 0 0 5px #000 !important; 
+  }
+  #nprogress .spinner { 
+    display: none !important; 
+  }
+}

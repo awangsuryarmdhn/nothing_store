@@ -1,5 +1,6 @@
+// @ts-check
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     './templates/**/*.html',
     './**/templates/**/*.html',
@@ -8,7 +9,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        display: ['Archivo Black', 'sans-serif'],
       },
       colors: {
         brand: {
@@ -20,7 +22,8 @@ module.exports = {
       }
     },
   },
-  plugins: [
-    require('daisyui'),
-  ],
+  plugins: [],
+  daisyui: {
+    themes: ['lofi'],
+  }
 }
