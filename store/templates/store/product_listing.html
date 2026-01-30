@@ -37,7 +37,7 @@
                             class="w-full bg-gray-100 border border-transparent focus:bg-white focus:border-black rounded-none px-4 py-2.5 pl-10 text-sm outline-none transition-all placeholder:text-gray-400 font-medium tracking-wide uppercase"
                             placeholder="Cari Produk...">
                         <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black transition-colors">
-                            <i data-lucide="search" class="w-4 h-4"></i>
+                            {% include 'store/partials/icons.html' with icon='search' class='w-4 h-4' %}
                         </div>
                         
                         {% if category %}<input type="hidden" name="category" value="{{ category.slug }}">{% endif %}
@@ -50,7 +50,7 @@
                             <option value="?search={{ request.GET.search }}&category={{ category.slug|default:'' }}&sort=price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Harga Terendah</option>
                             <option value="?search={{ request.GET.search }}&category={{ category.slug|default:'' }}&sort=price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Harga Tertinggi</option>
                         </select>
-                        <i data-lucide="chevron-down" class="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400"></i>
+                        {% include 'store/partials/icons.html' with icon='chevron-down' class='w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400' %}
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                         <option value="?search={{ request.GET.search }}&category={{ category.slug|default:'' }}&sort=price_asc">Termurah</option>
                         <option value="?search={{ request.GET.search }}&category={{ category.slug|default:'' }}&sort=price_desc">Termahal</option>
                     </select>
-                    <i data-lucide="arrow-up-down" class="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-black"></i>
+                    {% include 'store/partials/icons.html' with icon='arrow-up-down' class='w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-black' %}
                 </div>
             </div>
 
@@ -116,7 +116,7 @@
                         
                         <div class="absolute bottom-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 hidden md:block">
                             <span class="bg-white text-black p-2 flex items-center justify-center border border-black hover:bg-black hover:text-white transition-colors">
-                                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                                {% include 'store/partials/icons.html' with icon='arrow-up-right' class='w-4 h-4' %}
                             </span>
                         </div>
                     </div>
@@ -138,7 +138,7 @@
             
             <div class="col-span-full py-24 text-center border border-dashed border-gray-300 bg-gray-50">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4 shadow-sm">
-                    <i data-lucide="package-open" class="w-8 h-8 text-gray-300"></i>
+                    {% include 'store/partials/icons.html' with icon='package-open' class='w-8 h-8 text-gray-300' %}
                 </div>
                 <h3 class="font-display text-xl uppercase mb-2 text-black">Produk Tidak Ditemukan</h3>
                 <p class="text-gray-500 text-sm mb-6">Coba kata kunci lain atau reset filter.</p>
