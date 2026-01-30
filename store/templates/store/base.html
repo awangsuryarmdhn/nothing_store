@@ -6,28 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Nothing Brain | Mindless Hardware{% endblock %}</title>
     
-    <!-- Favicon (inline SVG) -->
+    <!-- Favicon (inline SVG - no extra request) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='bold' fill='%23fff' text-anchor='middle' font-family='Arial'%3ENB%3C/text%3E%3C/svg%3E">
-    <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='bold' fill='%23fff' text-anchor='middle' font-family='Arial'%3ENB%3C/text%3E%3C/svg%3E">
 
     {% if MEDIA_URL %}
     <link rel="preconnect" href="{{ MEDIA_URL }}" crossorigin>
     <link rel="dns-prefetch" href="{{ MEDIA_URL }}">
     {% endif %}
 
-    <!-- Tailwind CSS + DaisyUI (compiled) -->
+    <!-- CRITICAL: Preload CSS for faster rendering -->
+    <link rel="preload" href="{% static 'css/output.css' %}" as="style">
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
-    <script src="{% static 'js/lucide.min.js' %}" defer></script>
-    <script src="{% static 'js/htmx.min.js' %}" defer></script>
-
+    <!-- Fonts: Use font-display:swap for faster text rendering -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600&display=swap" rel="stylesheet"></noscript>
 
-    <!-- NProgress (Loading Bar) -->
-    <script src="{% static 'js/nprogress.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'css/nprogress.css' %}" />
+    <!-- Defer non-critical JS (icons load after page) -->
+    <script src="{% static 'js/htmx.min.js' %}" defer></script>
+    
+    <!-- NProgress - only small file, keep sync for visual feedback -->
+    <script src="{% static 'js/nprogress.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'css/nprogress.css' %}">
+    
+    <!-- Lucide Icons: Lazy load after page interactive -->
+    <script>
+    // Load icons only after DOM ready (317KB saved from initial load)
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(function() { loadLucideIcons(); });
+    } else {
+        window.addEventListener('load', loadLucideIcons);
+    }
+    function loadLucideIcons() {
+        var s = document.createElement('script');
+        s.src = '{% static "js/lucide.min.js" %}';
+        s.onload = function() { lucide.createIcons(); };
+        document.body.appendChild(s);
+    }
+    </script>
 </head>
 
 <body class="bg-base-100 min-h-screen flex flex-col selection:bg-black selection:text-white" hx-boost="true">
@@ -245,57 +263,61 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            lucide.createIcons();
-        });
+        // Icons are lazy loaded - safely call createIcons
+        function initIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
         
         // Re-initialize icons/scripts after HTMX swap
         document.addEventListener('htmx:afterSwap', function(evt) {
-            lucide.createIcons();
+            initIcons();
             window.scrollTo(0, 0); // Scroll top on nav
         });
 
         // NProgress Hooks
-        document.addEventListener('htmx:configRequest', function() { NProgress.start(); });
-        document.addEventListener('htmx:afterRequest', function() { NProgress.done(); });
+        document.addEventListener('htmx:configRequest', function() { if(typeof NProgress !== 'undefined') NProgress.start(); });
+        document.addEventListener('htmx:afterRequest', function() { if(typeof NProgress !== 'undefined') NProgress.done(); });
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2: Only load when needed -->
+    {% if messages %}
     <script>
-        // Konfigurasi SweetAlert Toast yang Minimalis & Modern
-        const NBToast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            showCloseButton: true,
-            timer: 4000,
-            timerProgressBar: true,
-            background: '#ffffff',
-            color: '#000000',
-            iconColor: '#000000',
-            customClass: {
-                popup: 'rounded-none border border-black font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]', // Efek Brutalist Shadow
-                timerProgressBar: 'bg-black',
-            },
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
-            }
-        });
+        // Lazy load SweetAlert only when messages exist
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        s.onload = function() {
+            const NBToast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                showCloseButton: true,
+                timer: 4000,
+                timerProgressBar: true,
+                background: '#ffffff',
+                color: '#000000',
+                iconColor: '#000000',
+                customClass: {
+                    popup: 'rounded-none border border-black font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
+                    timerProgressBar: 'bg-black',
+                },
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
 
-        {% if messages %}
             {% for message in messages %}
                 var iconType = 'success'; 
                 {% if message.tags == 'error' %} iconType = 'error'; {% endif %}
                 {% if message.tags == 'warning' %} iconType = 'warning'; {% endif %}
                 {% if message.tags == 'info' %} iconType = 'info'; {% endif %}
-
-                NBToast.fire({
-                    icon: iconType,
-                    title: "{{ message|escapejs }}"
-                });
+                NBToast.fire({ icon: iconType, title: "{{ message|escapejs }}" });
             {% endfor %}
-        {% endif %}
+        };
+        document.body.appendChild(s);
     </script>
+    {% endif %}
 </body>
 </html>

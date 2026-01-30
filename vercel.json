@@ -10,8 +10,15 @@
             }
         }
     ],
-    "buildCommand": "pip install -r requirements.txt && python manage.py createcachetable || true && python manage.py makemigrations --noinput && python manage.py migrate --noinput && python manage.py collectstatic --noinput",
+    "buildCommand": "npm install && npm run build && pip install -r requirements.txt && python manage.py createcachetable || true && python manage.py makemigrations --noinput && python manage.py migrate --noinput && python manage.py collectstatic --noinput",
     "routes": [
+        {
+            "src": "/static/(.*)",
+            "dest": "nothing_brain_project/wsgi.py",
+            "headers": {
+                "Cache-Control": "public, max-age=31536000, immutable"
+            }
+        },
         {
             "src": "/(.*)",
             "dest": "nothing_brain_project/wsgi.py"
