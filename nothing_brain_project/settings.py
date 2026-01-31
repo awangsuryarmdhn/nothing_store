@@ -41,6 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://nothingbrain.store",
     "https://*.vercel.app",
     "https://*.herokuapp.com",
+    'https://*.nothingbrain.biz.id',
 ]
 if config('NGROK_HOSTNAME', default=''):
     CSRF_TRUSTED_ORIGINS.append(f"https://{config('NGROK_HOSTNAME')}")
