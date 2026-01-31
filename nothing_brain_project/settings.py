@@ -31,7 +31,6 @@ ALLOWED_HOSTS = [
     'nothingbrain.store',
     '.nothingbrain.store',
     '.nothingbrain.biz.id',
-    '.nothingbrain.biz.id',
     config('NGROK_HOSTNAME', default=''),
 ]
 

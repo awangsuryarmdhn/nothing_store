@@ -325,5 +325,14 @@
         document.body.appendChild(s);
     </script>
     {% endif %}
+
+    <!-- Service Worker Registration for offline caching -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('{% static "js/sw.js" %}')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW error:', err));
+    }
+    </script>
 </body>
 </html>
